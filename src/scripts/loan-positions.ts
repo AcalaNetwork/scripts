@@ -8,7 +8,7 @@ import { WalletRx } from '@acala-network/sdk-wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
 import { firstValueFrom } from 'rxjs'
 import { forceToCurrencyName } from '@acala-network/sdk-core'
-import { formatBalance, formatDecimal, log } from '../log'
+import { formatBalance, formatDecimal, logFormat } from '../log'
 import { getApiRx } from '../networks'
 
 import { BN } from 'bn.js'
@@ -77,7 +77,14 @@ const main = async () => {
 
     result.sort((a, b) => b[1].debit.cmp(a[1].debit))
 
-    log(result.slice(0, 3))
+    console.table(
+        result.slice(0, 3).map(([key, value]) => ({
+          token: params.currencyName,
+          acc: logFormat(key.args[1]),
+          collateral: formatBalance(value.collateral),
+          debit: formatBalance(value.debit.mul(params.other.rate).div(new BN((1e18).toString())), stableCurrency.decimal),
+        }))
+    )
   }
 }
 
