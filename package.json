@@ -5,6 +5,10 @@
   "author": "Acala developers <hello@acala.network>",
   "license": "Apache-2.0",
   "packageManager": "yarn@3.2.0",
+  "scripts": {
+    "lint": "tsc --project . --noEmit && eslint . --ext .js,.ts && prettier -c .",
+    "fix": "tsc --project . --noEmit && eslint . --ext .js,.ts --fix && prettier -w ."
+  },
   "dependencies": {
     "@acala-network/api": "^4.0.1",
     "@acala-network/types": "^4.0.1",
@@ -12,7 +16,20 @@
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
+    "@typescript-eslint/eslint-plugin": "^5.17.0",
+    "@typescript-eslint/parser": "^5.17.0",
+    "eslint": "^8.12.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-typescript": "^2.7.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
+    "prettier": "^2.6.1",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.3"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": false,
+    "singleQuote": true
   }
 }
