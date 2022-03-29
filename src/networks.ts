@@ -5,7 +5,10 @@ import { options } from '@acala-network/api'
 config()
 
 const getEndpoints = (network: string, defaultEndpoints: string[]): string[] => {
-  const endpoints = (process.env[`WS_ENDPOINTS_${network.toUpperCase()}`] || '').split(',').map((x) => x.trim())
+  const endpoints = (process.env[`WS_ENDPOINTS_${network.toUpperCase()}`] || '')
+    .split(',')
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0)
   if (endpoints.length === 0) {
     return defaultEndpoints
   }

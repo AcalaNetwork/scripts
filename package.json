@@ -7,7 +7,10 @@
   "packageManager": "yarn@3.2.0",
   "scripts": {
     "lint": "tsc --project . --noEmit && eslint . --ext .js,.ts && prettier -c .",
-    "fix": "tsc --project . --noEmit && eslint . --ext .js,.ts --fix && prettier -w ."
+    "fix": "tsc --project . --noEmit && eslint . --ext .js,.ts --fix && prettier -w .",
+    "postinstall": "husky install",
+    "prepublishOnly": "pinst --disable",
+    "postpublish": "pinst --enable"
   },
   "dependencies": {
     "@acala-network/api": "^4.0.1",
@@ -30,6 +33,9 @@
     "eslint-import-resolver-typescript": "^2.7.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
+    "husky": ">=6",
+    "lint-staged": ">=10",
+    "pinst": ">=2",
     "prettier": "^2.6.1",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.3"
@@ -38,5 +44,9 @@
     "tabWidth": 2,
     "semi": false,
     "singleQuote": true
+  },
+  "lint-staged": {
+    "*.{js,ts}": "eslint --cache --fix",
+    "*.{js,ts,md}": "prettier --write"
   }
 }
