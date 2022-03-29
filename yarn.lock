@@ -17,7 +17,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@acala-network/api@npm:^4.0.1":
+"@acala-network/api@npm:4.0.1, @acala-network/api@npm:^4.0.1":
   version: 4.0.1
   resolution: "@acala-network/api@npm:4.0.1"
   dependencies:
@@ -31,6 +31,51 @@ __metadata:
     "@polkadot/api": ^7.1.1
     "@polkadot/types": ^7.1.1
   checksum: 282204325c9923d728affe915f5378247af0eb8c55a94f7dc97198a7f6e4d1aece3b355b32b3cec386c7ccbaf1d63668c4f5415981a3ea5ca4989ffaf7796efd
+  languageName: node
+  linkType: hard
+
+"@acala-network/sdk-core@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@acala-network/sdk-core@npm:4.0.1"
+  dependencies:
+    "@polkadot/api": ^7.1.1
+    "@polkadot/types": ^7.1.1
+    "@types/events": ^3.0.0
+    bignumber.js: ^9.0.0
+    events: ^3.2.0
+    lodash: ^4.17.20
+  checksum: 07f2ab4be6a28a8d58b483c97f026a53aa34781c5bb6c849a99d8bd3a34a9eb8fd2ff3c4fe210afeccfa1208fd103f231179dab1db101f82934f1d4a4ce0460b
+  languageName: node
+  linkType: hard
+
+"@acala-network/sdk-wallet@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@acala-network/sdk-wallet@npm:4.0.1"
+  dependencies:
+    "@polkadot/api": ^7.1.1
+    "@polkadot/types": ^7.1.1
+    lodash: ^4.17.20
+    rxjs: ^7.4.0
+  checksum: a781c5413137e1adbdd1ab50fedb4e96aa5cbd7eb83c518068819ec13232893d5c4f4dfafe7650e667aa5dd9b542a7242322b437c7da480594dea386dd8af867
+  languageName: node
+  linkType: hard
+
+"@acala-network/sdk@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@acala-network/sdk@npm:4.0.1"
+  dependencies:
+    "@acala-network/api": 4.0.1
+    "@acala-network/type-definitions": 4.0.1
+    "@polkadot/api": ^7.1.1
+    "@polkadot/types": ^7.1.1
+    "@types/events": ^3.0.0
+    axios: ^0.24.0
+    bignumber.js: ^9.0.0
+    cross-fetch: ^3.1.4
+    events: ^3.2.0
+    lodash: ^4.17.20
+    rxjs: ^7.4.0
+  checksum: f5bb9fae23c9f4f1710734fb84bf4db9f543cb267f48046e51e363a54291c3ad8c4a1f045c3fe99da28fde967be70f6d6141929f4f60914d5d704a96f375a615
   languageName: node
   linkType: hard
 
@@ -509,6 +554,16 @@ __metadata:
     "@polkadot/api": ">6.3.1"
     "@polkadot/typegen": ">6.3.1"
   checksum: 702463e066edbb932de87b2b408b3446e8d2789349a2cd0bd23852d0598247ebc1d09f457175595a376da82117a4c2efd8cb20d59fc803f05c595f50d3d7327e
+  languageName: node
+  linkType: hard
+
+"@open-web3/util@npm:^1.1.3":
+  version: 1.1.3
+  resolution: "@open-web3/util@npm:1.1.3"
+  dependencies:
+    "@yarnpkg/lockfile": ^1.1.0
+    big.js: ^6.1.1
+  checksum: dfbe333aab6af0b257c05b41ed25535a9818156de7a58e78d8fb396a068b91a657f6c5070c822b64acdcdfe978a3207ce222362946b5ecd842cef51c2af52971
   languageName: node
   linkType: hard
 
@@ -993,6 +1048,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/events@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@types/events@npm:3.0.0"
+  checksum: 9a424c2da210957d5636e0763e8c9fc3aaeee35bf411284ddec62a56a6abe31de9c7c2e713dabdd8a76ff98b47db2bd52f61310be6609641d6234cc842ecbbe3
+  languageName: node
+  linkType: hard
+
 "@types/json-schema@npm:^7.0.9":
   version: 7.0.11
   resolution: "@types/json-schema@npm:7.0.11"
@@ -1147,6 +1209,13 @@ __metadata:
     "@typescript-eslint/types": 5.17.0
     eslint-visitor-keys: ^3.0.0
   checksum: 333468277b50e2fc381ba1b99ccb410046c422e0329c791c51bea62e705edd16ba97f75b668c6945a3ea3dc43b89a1739693ea60bfa241c67ce42e8b474e5048
+  languageName: node
+  linkType: hard
+
+"@yarnpkg/lockfile@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@yarnpkg/lockfile@npm:1.1.0"
+  checksum: 05b881b4866a3546861fee756e6d3812776ea47fa6eb7098f983d6d0eefa02e12b66c3fff931574120f196286a7ad4879ce02743c8bb2be36c6a576c7852083a
   languageName: node
   linkType: hard
 
@@ -1318,6 +1387,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"axios@npm:^0.24.0":
+  version: 0.24.0
+  resolution: "axios@npm:0.24.0"
+  dependencies:
+    follow-redirects: ^1.14.4
+  checksum: 468cf496c08a6aadfb7e699bebdac02851e3043d4e7d282350804ea8900e30d368daa6e3cd4ab83b8ddb5a3b1e17a5a21ada13fc9cebd27b74828f47a4236316
+  languageName: node
+  linkType: hard
+
 "balanced-match@npm:^1.0.0":
   version: 1.0.2
   resolution: "balanced-match@npm:1.0.2"
@@ -1329,6 +1407,20 @@ __metadata:
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
   checksum: 669632eb3745404c2f822a18fc3a0122d2f9a7a13f7fb8b5823ee19d1d2ff9ee5b52c53367176ea4ad093c332fd5ab4bd0ebae5a8e27917a4105a4cfc86b1005
+  languageName: node
+  linkType: hard
+
+"big.js@npm:^6.1.1":
+  version: 6.1.1
+  resolution: "big.js@npm:6.1.1"
+  checksum: ba5db278e7d6700d7f92b7421e851bb65b6336d90b882869696c50574623c6be31f81500c3195fb1b391045163ffe62745e1c2bc30b35cb15e1b3e3ed135266b
+  languageName: node
+  linkType: hard
+
+"bignumber.js@npm:^9.0.0":
+  version: 9.0.2
+  resolution: "bignumber.js@npm:9.0.2"
+  checksum: 8637b71d0a99104b20413c47578953970006fec6b4df796b9dcfd9835ea9c402ea0e727eba9a5ca9f9a393c1d88b6168c5bbe0887598b708d4f8b4870ad62e1f
   languageName: node
   linkType: hard
 
@@ -1594,6 +1686,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cross-fetch@npm:^3.1.4":
+  version: 3.1.5
+  resolution: "cross-fetch@npm:3.1.5"
+  dependencies:
+    node-fetch: 2.6.7
+  checksum: f6b8c6ee3ef993ace6277fd789c71b6acf1b504fd5f5c7128df4ef2f125a429e29cd62dc8c127523f04a5f2fa4771ed80e3f3d9695617f441425045f505cf3bb
+  languageName: node
+  linkType: hard
+
 "cross-spawn@npm:^7.0.2":
   version: 7.0.3
   resolution: "cross-spawn@npm:7.0.3"
@@ -1713,6 +1814,13 @@ __metadata:
   dependencies:
     esutils: ^2.0.2
   checksum: fd7673ca77fe26cd5cba38d816bc72d641f500f1f9b25b83e8ce28827fe2da7ad583a8da26ab6af85f834138cf8dae9f69b0cd6ab925f52ddab1754db44d99ce
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:^16.0.0":
+  version: 16.0.0
+  resolution: "dotenv@npm:16.0.0"
+  checksum: 664cebb51f0a9a1d1b930f51f0271e72e26d62feaecc9dc03df39453dd494b4e724809ca480fb3ec3213382b1ed3f791aaeb83569a137f9329ce58efd4853dbf
   languageName: node
   linkType: hard
 
@@ -2102,6 +2210,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"events@npm:^3.2.0":
+  version: 3.3.0
+  resolution: "events@npm:3.3.0"
+  checksum: f6f487ad2198aa41d878fa31452f1a3c00958f46e9019286ff4787c84aac329332ab45c9cdc8c445928fc6d7ded294b9e005a7fce9426488518017831b272780
+  languageName: node
+  linkType: hard
+
 "ext@npm:^1.1.2":
   version: 1.6.0
   resolution: "ext@npm:1.6.0"
@@ -2215,6 +2330,16 @@ __metadata:
   version: 3.2.5
   resolution: "flatted@npm:3.2.5"
   checksum: 3c436e9695ccca29620b4be5671dd72e5dd0a7500e0856611b7ca9bd8169f177f408c3b9abfa78dfe1493ee2d873e2c119080a8a9bee4e1a186a9e60ca6c89f1
+  languageName: node
+  linkType: hard
+
+"follow-redirects@npm:^1.14.4":
+  version: 1.14.9
+  resolution: "follow-redirects@npm:1.14.9"
+  peerDependenciesMeta:
+    debug:
+      optional: true
+  checksum: f5982e0eb481818642492d3ca35a86989c98af1128b8e1a62911a3410621bc15d2b079e8170b35b19d3bdee770b73ed431a257ed86195af773771145baa57845
   languageName: node
   linkType: hard
 
@@ -2880,6 +3005,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash@npm:^4.17.20":
+  version: 4.17.21
+  resolution: "lodash@npm:4.17.21"
+  checksum: eb835a2e51d381e561e508ce932ea50a8e5a68f4ebdd771ea240d3048244a8d13658acbd502cd4829768c56f2e16bdd4340b9ea141297d472517b83868e677f7
+  languageName: node
+  linkType: hard
+
 "lru-cache@npm:^6.0.0":
   version: 6.0.0
   resolution: "lru-cache@npm:6.0.0"
@@ -3174,7 +3306,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:^2.6.7":
+"node-fetch@npm:2.6.7, node-fetch@npm:^2.6.7":
   version: 2.6.7
   resolution: "node-fetch@npm:2.6.7"
   dependencies:
@@ -3609,7 +3741,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:^7.2.0, rxjs@npm:^7.5.5":
+"rxjs@npm:^7.2.0, rxjs@npm:^7.4.0, rxjs@npm:^7.5.5":
   version: 7.5.5
   resolution: "rxjs@npm:7.5.5"
   dependencies:
@@ -3644,17 +3776,24 @@ __metadata:
   resolution: "scripts@workspace:."
   dependencies:
     "@acala-network/api": ^4.0.1
+    "@acala-network/sdk": ^4.0.1
+    "@acala-network/sdk-core": ^4.0.1
+    "@acala-network/sdk-wallet": ^4.0.1
     "@acala-network/types": ^4.0.1
+    "@open-web3/util": ^1.1.3
     "@polkadot/api": ^7.14.3
     "@types/node": ^17.0.23
     "@typescript-eslint/eslint-plugin": ^5.17.0
     "@typescript-eslint/parser": ^5.17.0
+    bn.js: ^5.2.0
+    dotenv: ^16.0.0
     eslint: ^8.12.0
     eslint-config-prettier: ^8.5.0
     eslint-import-resolver-typescript: ^2.7.0
     eslint-plugin-import: ^2.25.4
     eslint-plugin-sort-imports-es6-autofix: ^0.6.0
     prettier: ^2.6.1
+    rxjs: ^7.5.5
     ts-node: ^10.7.0
     typescript: ^4.6.3
   languageName: unknown

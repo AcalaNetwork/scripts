@@ -6,7 +6,8 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "esnext",
-    "strict": false
+    "strict": true,
+    "skipLibCheck": true
   },
   "exclude": ["node_modules"],
   "include": ["src"]
