@@ -78,12 +78,12 @@ const main = async () => {
     result.sort((a, b) => b[1].debit.cmp(a[1].debit))
 
     console.table(
-        result.slice(0, 3).map(([key, value]) => ({
-          token: params.currencyName,
-          acc: logFormat(key.args[1]),
-          collateral: formatBalance(value.collateral),
-          debit: formatBalance(value.debit.mul(params.other.rate).div(new BN((1e18).toString())), stableCurrency.decimal),
-        }))
+      result.slice(0, 3).map(([key, value]) => ({
+        token: params.currencyName,
+        acc: logFormat(key.args[1]),
+        collateral: formatBalance(value.collateral),
+        debit: formatBalance(value.debit.mul(params.other.rate).div(new BN((1e18).toString())), stableCurrency.decimal),
+      }))
     )
   }
 }
