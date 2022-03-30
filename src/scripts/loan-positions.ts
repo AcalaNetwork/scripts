@@ -9,13 +9,16 @@ import { fetchEntriesToArray } from '@open-web3/util'
 import { firstValueFrom } from 'rxjs'
 import { forceToCurrencyName } from '@acala-network/sdk-core'
 import { formatBalance, formatDecimal, logFormat } from '../log'
-import { getApiRx } from '../networks'
+import { getApiRx, getNetwork } from '../networks'
 
 import { BN } from 'bn.js'
 import type { AcalaPrimitivesCurrencyCurrencyId } from '@polkadot/types/lookup'
 
 const main = async () => {
-  const api = getApiRx('karura')
+  const network = getNetwork()
+  console.log('Network:', network)
+
+  const api = getApiRx(network)
   await firstValueFrom(api.isReady)
   const wallet = new WalletRx(api)
   // const homa = new Homa(api, wallet)

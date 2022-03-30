@@ -31,7 +31,8 @@ module.exports = {
     'sort-imports-es6-autofix/sort-imports-es6': 'error',
     '@typescript-eslint/no-unsafe-member-access': 'off',
     '@typescript-eslint/no-unsafe-assignment': 'off',
-    'eslint-disable @typescript-eslint/no-unsafe-call': 'off', // false positives
-    'eslint-disable @typescript-eslint/no-unsafe-argument': 'off', // false positives
+    '@typescript-eslint/no-unsafe-call': 'off', // false positives
+    '@typescript-eslint/no-unsafe-argument': 'off', // false positives
+    '@typescript-eslint/no-explicit-any': 'off',
   },
 }

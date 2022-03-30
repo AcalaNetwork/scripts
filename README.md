@@ -6,3 +6,5 @@
   - `yarn ts-node src/scripts/loan-positions.ts`
 - Configure private node
   - Copy `.env.example` to `.env` and add ws endpoint
+- Parameters
+  - `--network`: network name
