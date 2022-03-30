@@ -15,7 +15,12 @@ const main = async () => {
   const api = getApiRx(network)
   await firstValueFrom(api.isReady)
 
-  const collaterals = await firstValueFrom(api.query.cdpEngine.collateralParams.keys())
+  const header = await firstValueFrom(api.rpc.chain.getHeader())
+  console.log('Block', header.number.toNumber())
+
+  const apiAt = await api.at(header.hash)
+
+  const collaterals = await firstValueFrom(apiAt.query.cdpEngine.collateralParams.keys())
 
   for (const key of collaterals) {
     const currency = key.args[0]
@@ -24,7 +29,7 @@ const main = async () => {
 
     const loans = await fetchEntriesToArray((startKey) =>
       firstValueFrom(
-        api.query.loans.positions.entriesPaged({
+        apiAt.query.loans.positions.entriesPaged({
           args: [currency],
           pageSize: 500,
           startKey,
@@ -39,7 +44,7 @@ const main = async () => {
     await fetchEntries(
       (startKey) =>
         firstValueFrom(
-          api.query.rewards.sharesAndWithdrawnRewards.entriesPaged({
+          apiAt.query.rewards.sharesAndWithdrawnRewards.entriesPaged({
             args: [{ Loans: currency }],
             pageSize: 500,
             startKey,

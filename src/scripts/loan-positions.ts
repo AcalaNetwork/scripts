@@ -20,12 +20,19 @@ const main = async () => {
 
   const api = getApiRx(network)
   await firstValueFrom(api.isReady)
+
+  const header = await firstValueFrom(api.rpc.chain.getHeader())
+  console.log('Block', header.number.toNumber())
+
+  const apiAt = await api.at(header.hash)
+
+  await firstValueFrom(api.isReady)
   const wallet = new WalletRx(api)
   // const homa = new Homa(api, wallet)
 
-  const collaterals = await firstValueFrom(api.query.cdpEngine.collateralParams.entries())
+  const collaterals = await firstValueFrom(apiAt.query.cdpEngine.collateralParams.entries())
 
-  const stableCurrency = wallet.getToken(api.consts.cdpEngine.getStableCurrencyId)
+  const stableCurrency = wallet.getToken(apiAt.consts.cdpEngine.getStableCurrencyId)
 
   const honzonData = await Promise.all(
     collaterals.map(
@@ -36,10 +43,10 @@ const main = async () => {
         const currency = key.args[0]
         const decimal = wallet.getToken(currency).decimal
         const total = await firstValueFrom(
-          api.query.loans.totalPositions(currency as AcalaPrimitivesCurrencyCurrencyId)
+          apiAt.query.loans.totalPositions(currency as AcalaPrimitivesCurrencyCurrencyId)
         )
-        const rate = (await firstValueFrom(api.query.cdpEngine.debitExchangeRate(currency))).unwrapOr(
-          api.consts.cdpEngine.defaultDebitExchangeRate
+        const rate = (await firstValueFrom(apiAt.query.cdpEngine.debitExchangeRate(currency))).unwrapOr(
+          apiAt.consts.cdpEngine.defaultDebitExchangeRate
         )
 
         return {
@@ -70,7 +77,7 @@ const main = async () => {
     const currency = params.other.currency
     const result = await fetchEntriesToArray((startKey) =>
       firstValueFrom(
-        api.query.loans.positions.entriesPaged({
+        apiAt.query.loans.positions.entriesPaged({
           args: [currency],
           pageSize: 500,
           startKey,
