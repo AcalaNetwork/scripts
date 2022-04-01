@@ -59,6 +59,9 @@ export const getNetworks = (arg?: string): Networks[] | 'all' => {
       throw new Error(`Unknown network: ${network || ''}`)
     }
   }
+  if (arr.length === 0) {
+    throw new Error('No network specified')
+  }
   return arr as Networks[]
 }
 
