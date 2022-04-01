@@ -16,7 +16,7 @@ const getEndpoints = (network: string, defaultEndpoints: string[]): string[] => 
   return endpoints
 }
 
-const networks = {
+export const networks = {
   acala: {
     ws: getEndpoints('acala', [
       'wss://acala-polkadot.api.onfinality.io/public-ws',
@@ -45,6 +45,8 @@ const networks = {
   },
 }
 
+export type Networks = keyof typeof networks
+
 export const getNetwork = (network?: string) => {
   if (network == null) {
     network = (yargs.argv as any).network || 'karura'
@@ -53,14 +55,14 @@ export const getNetwork = (network?: string) => {
     }
   }
 
-  return network as keyof typeof networks
+  return network as Networks
 }
 
-export const getWsProvider = (network: keyof typeof networks): WsProvider => {
+export const getWsProvider = (network: Networks): WsProvider => {
   return new WsProvider(networks[network as 'karura'].ws)
 }
 
-export const getApiRx = (network: keyof typeof networks): ApiRx => {
+export const getApiRx = (network: Networks): ApiRx => {
   const ws = getWsProvider(network)
   if (network === 'acala' || network === 'karura') {
     return new ApiRx(options({ provider: ws }))
@@ -68,7 +70,7 @@ export const getApiRx = (network: keyof typeof networks): ApiRx => {
   return new ApiRx({ provider: ws })
 }
 
-export const getApiPromise = (network: keyof typeof networks): ApiPromise => {
+export const getApiPromise = (network: Networks): ApiPromise => {
   const ws = getWsProvider(network)
   if (network === 'acala' || network === 'karura') {
     return new ApiPromise(options({ provider: ws }))
