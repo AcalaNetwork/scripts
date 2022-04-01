@@ -1,8 +1,9 @@
 import { AnyApi } from '@acala-network/sdk-core'
 import { ApiDecoration, ApiTypes } from '@polkadot/api/types'
 import { ApiPromise, ApiRx } from '@polkadot/api'
-import { Networks, getApiPromise, getApiRx, getNetwork } from './networks'
+import { Networks, getApiPromise, getApiRx, getNetworks } from './networks'
 import { Observable, firstValueFrom } from 'rxjs'
+import yargs from 'yargs'
 
 class Context<Api, ApiAt> {
   constructor(public network: Networks, public api: Api, public apiAt: ApiAt) {}
@@ -53,38 +54,44 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
   }
 
   async #run(fn: (c: Context<Api, ApiAt>) => Promise<any>) {
-    const network = getNetwork()
+    let networks = getNetworks((yargs.argv as any).network)
 
-    if (!this.#requiredNetwork.includes(network)) {
-      throw new Error(`Network not supported: ${network}. Supported networks: ${this.#requiredNetwork.join(', ')}`)
+    if (networks === 'all') {
+      networks = this.#requiredNetwork
     }
 
-    console.log('Network:', network)
-
-    const api = this.#getApi(network)
-
-    await this.#toPromise(api.isReady)
-
-    let apiAt: ApiAt
-    if (this.#at === undefined) {
-      apiAt = undefined as unknown as ApiAt
-    } else {
-      let hash
-      let number
-      if (this.#at !== 'latest') {
-        hash = await this.#toPromise(api.rpc.chain.getBlockHash(this.#at))
-        number = this.#at
-      } else {
-        const header = await this.#toPromise(api.rpc.chain.getHeader())
-        hash = header.hash
-        number = header.number.toNumber()
+    for (const network of networks) {
+      if (!this.#requiredNetwork.includes(network)) {
+        throw new Error(`Network not supported: ${network}. Supported networks: ${this.#requiredNetwork.join(', ')}`)
       }
 
-      console.log('Block Number:', number)
-      apiAt = (await api.at(hash)) as unknown as ApiAt
-    }
+      console.log('Network:', network)
 
-    await fn(new Context(network, api, apiAt))
+      const api = this.#getApi(network)
+
+      await this.#toPromise(api.isReady)
+
+      let apiAt: ApiAt
+      if (this.#at === undefined) {
+        apiAt = undefined as unknown as ApiAt
+      } else {
+        let hash
+        let number
+        if (this.#at !== 'latest') {
+          hash = await this.#toPromise(api.rpc.chain.getBlockHash(this.#at))
+          number = this.#at
+        } else {
+          const header = await this.#toPromise(api.rpc.chain.getHeader())
+          hash = header.hash
+          number = header.number.toNumber()
+        }
+
+        console.log('Block Number:', number)
+        apiAt = (await api.at(hash)) as unknown as ApiAt
+      }
+
+      await fn(new Context(network, api, apiAt))
+    }
   }
 
   run(fn: (c: Context<Api, ApiAt>) => Promise<any>): void {

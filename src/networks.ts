@@ -1,7 +1,6 @@
 import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api'
 import { config } from 'dotenv'
 import { options } from '@acala-network/api'
-import yargs from 'yargs'
 
 config()
 
@@ -47,15 +46,20 @@ export const networks = {
 
 export type Networks = keyof typeof networks
 
-export const getNetwork = (network?: string) => {
-  if (network == null) {
-    network = (yargs.argv as any).network || 'karura'
+export const getNetworks = (arg?: string): Networks[] | 'all' => {
+  if (arg === undefined || arg === 'all') {
+    return 'all'
+  }
+  const arr = arg
+    .split(',')
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0)
+  for (const network of arr) {
     if (networks[network as 'karura'] == null) {
       throw new Error(`Unknown network: ${network || ''}`)
     }
   }
-
-  return network as Networks
+  return arr as Networks[]
 }
 
 export const getWsProvider = (network: Networks): WsProvider => {
