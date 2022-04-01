@@ -2,7 +2,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
+import { FixedPointNumber } from '@acala-network/sdk-core'
+import { format } from '@fast-csv/format'
 import BN from 'bn.js'
+
+import { config } from './runner'
 
 export const logFormat = (x: any): any => {
   if (x == null) {
@@ -33,18 +37,43 @@ export const formatDecimal = (x: number | BN | string, length = 4) => {
   return Math.round(n * 10 ** length) / 10 ** length
 }
 
-export const formatBalance = (x: number | BN | string, decimal = 12) => {
+export const formatBalance = (x: number | BN | string | FixedPointNumber, decimal = 12) => {
   let n
+  if (x instanceof FixedPointNumber) {
+    n = x.toNumber()
+  }
   if (typeof x === 'number') {
     n = x
   } else {
     n = +x.toString() / 10 ** decimal
   }
-  if (n > 1e6) {
-    return `${formatDecimal(n / 1e6, 4)}M`
+
+  if (config.output === 'console') {
+    if (n > 1e6) {
+      return `${formatDecimal(n / 1e6, 4)}M`
+    }
+    if (n > 1e3) {
+      return `${formatDecimal(n / 1e3, 4)}K`
+    }
   }
-  if (n > 1e3) {
-    return `${formatDecimal(n / 1e3, 4)}K`
-  }
+
   return formatDecimal(n).toString()
+}
+
+export const table = (data: any) => {
+  if (config.output === 'csv') {
+    console.log()
+    const csvStream = format({ headers: true })
+    csvStream.pipe(process.stdout)
+
+    if (Array.isArray(data)) {
+      data.forEach((x) => csvStream.write(x))
+    } else {
+      csvStream.write(data)
+    }
+    csvStream.end()
+    console.log()
+  } else {
+    console.table(data)
+  }
 }

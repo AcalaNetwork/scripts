@@ -3,16 +3,18 @@
 import '@acala-network/types'
 import '@acala-network/types/interfaces/types-lookup'
 
+import type { AcalaPrimitivesCurrencyCurrencyId } from '@polkadot/types/lookup'
+
+import { BN } from 'bn.js'
+import { firstValueFrom } from 'rxjs'
+
 // import { Homa } from '@acala-network/sdk'
 import { WalletRx } from '@acala-network/sdk-wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
-import { firstValueFrom } from 'rxjs'
 import { forceToCurrencyName } from '@acala-network/sdk-core'
-import { formatBalance, formatDecimal, logFormat } from '../log'
 
-import { BN } from 'bn.js'
+import { formatBalance, formatDecimal, logFormat, table } from '../log'
 import runner from '../runner'
-import type { AcalaPrimitivesCurrencyCurrencyId } from '@polkadot/types/lookup'
 
 runner()
   .requiredNetwork(['acala', 'karura'])
@@ -79,7 +81,7 @@ runner()
 
       result.sort((a, b) => b[1].debit.cmp(a[1].debit))
 
-      console.table(
+      table(
         result.slice(0, 3).map(([key, value]) => ({
           token: params.currencyName,
           acc: logFormat(key.args[1]),

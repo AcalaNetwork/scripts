@@ -5,6 +5,11 @@ import { Networks, getApiPromise, getApiRx, getNetworks } from './networks'
 import { Observable, firstValueFrom } from 'rxjs'
 import yargs from 'yargs'
 
+export const config = {
+  network: '',
+  output: 'console',
+}
+
 class Context<Api, ApiAt> {
   constructor(public network: Networks, public api: Api, public apiAt: ApiAt) {}
 }
@@ -54,6 +59,8 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
   }
 
   async #run(fn: (c: Context<Api, ApiAt>) => Promise<any>) {
+    config.output = (yargs.argv as any).output || 'console'
+
     let networks = getNetworks((yargs.argv as any).network)
 
     if (networks === 'all') {
@@ -65,6 +72,7 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
         throw new Error(`Network not supported: ${network}. Supported networks: ${this.#requiredNetwork.join(', ')}`)
       }
 
+      config.network = network
       console.log('Network:', network)
 
       const api = this.#getApi(network)
@@ -91,6 +99,8 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
       }
 
       await fn(new Context(network, api, apiAt))
+
+      console.log()
     }
   }
 
