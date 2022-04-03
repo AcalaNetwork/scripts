@@ -47,7 +47,10 @@ export const networks = {
 export type Networks = keyof typeof networks
 
 export const getNetworks = (arg?: string): Networks[] | 'all' => {
-  if (arg === undefined || arg === 'all') {
+  if (arg === undefined) {
+    return []
+  }
+  if (arg === 'all') {
     return 'all'
   }
   const arr = arg

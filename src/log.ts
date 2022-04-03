@@ -27,9 +27,11 @@ export const log = (...x: any[]) => {
   console.dir(json, { depth: 5 })
 }
 
-export const formatDecimal = (x: number | BN | string, length = 4) => {
+export const formatDecimal = (x: number | BN | string | FixedPointNumber, length = 4) => {
   let n
-  if (typeof x === 'number') {
+  if (x instanceof FixedPointNumber) {
+    n = x.toNumber()
+  } else if (typeof x === 'number') {
     n = x
   } else {
     n = +x.toString() / 1e18
@@ -41,8 +43,7 @@ export const formatBalance = (x: number | BN | string | FixedPointNumber, decima
   let n
   if (x instanceof FixedPointNumber) {
     n = x.toNumber()
-  }
-  if (typeof x === 'number') {
+  } else if (typeof x === 'number') {
     n = x
   } else {
     n = +x.toString() / 10 ** decimal

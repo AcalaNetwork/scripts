@@ -59,12 +59,40 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
   }
 
   async #run(fn: (c: Context<Api, ApiAt>) => Promise<any>) {
-    config.output = (yargs.argv as any).output || 'console'
+    const argv = yargs.argv as any
 
-    let networks = getNetworks((yargs.argv as any).network)
+    config.output = argv.output || 'console'
 
-    if (networks === 'all') {
+    let networks
+
+    if (argv.all) {
       networks = this.#requiredNetwork
+    } else {
+      networks = getNetworks(argv.network)
+
+      if (networks === 'all') {
+        networks = this.#requiredNetwork
+      }
+
+      if (argv.acala && !networks.includes('acala')) {
+        networks.push('acala')
+      }
+
+      if (argv.karura && !networks.includes('karura')) {
+        networks.push('karura')
+      }
+
+      if (argv.polkadot && !networks.includes('polkadot')) {
+        networks.push('polkadot')
+      }
+
+      if (argv.kusama && !networks.includes('kusama')) {
+        networks.push('kusama')
+      }
+
+      if (networks.length === 0) {
+        networks = this.#requiredNetwork
+      }
     }
 
     for (const network of networks) {
