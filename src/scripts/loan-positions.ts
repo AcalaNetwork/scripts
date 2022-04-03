@@ -5,13 +5,12 @@ import '@acala-network/types/interfaces/types-lookup'
 
 import type { AcalaPrimitivesCurrencyCurrencyId } from '@polkadot/types/lookup'
 
-import { BN } from 'bn.js'
 import { firstValueFrom } from 'rxjs'
 
 // import { Homa } from '@acala-network/sdk'
+import { FixedPointNumber } from '@acala-network/sdk-core'
 import { WalletRx } from '@acala-network/sdk-wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
-import { forceToCurrencyName } from '@acala-network/sdk-core'
 
 import { formatBalance, formatDecimal, logFormat, table } from '../log'
 import runner from '../runner'
@@ -35,37 +34,48 @@ runner()
           { interestRatePerSec, maximumTotalDebitValue, liquidationRatio, liquidationPenalty, requiredCollateralRatio },
         ]) => {
           const currency = key.args[0]
-          const decimal = wallet.getToken(currency).decimal
+          const token = wallet.getToken(currency)
+          const decimals = token.decimals
           const total = await firstValueFrom(
             apiAt.query.loans.totalPositions(currency as AcalaPrimitivesCurrencyCurrencyId)
           )
-          const rate = (await firstValueFrom(apiAt.query.cdpEngine.debitExchangeRate(currency))).unwrapOr(
+          const rateValue = (await firstValueFrom(apiAt.query.cdpEngine.debitExchangeRate(currency))).unwrapOr(
             apiAt.consts.cdpEngine.defaultDebitExchangeRate
           )
+          const rate = FixedPointNumber.fromInner(rateValue.toString(), 18)
+          const price = (await firstValueFrom(wallet.queryPrice(token))).price
+
+          const collateralValue = price.mul(FixedPointNumber.fromInner(total.collateral.toString(), decimals))
+          const debitNumber = FixedPointNumber.fromInner(total.debit.toString(), stableCurrency.decimals)
+          const debitValue = debitNumber.mul(rate)
 
           return {
-            currencyName: forceToCurrencyName(currency),
+            currencyName: token.display,
             interestRatePerYear: formatDecimal(
               (interestRatePerSec.unwrapOrDefault().toNumber() / 1e18 + 1) ** (365 * 86400) - 1
             ),
-            maximumTotalDebitValue: formatBalance(maximumTotalDebitValue, stableCurrency.decimal),
+            maxTotalDebitValue: formatBalance(maximumTotalDebitValue, stableCurrency.decimals),
             liquidationRatio: formatDecimal(liquidationRatio.unwrapOrDefault()),
             liquidationPenalty: formatDecimal(liquidationPenalty.unwrapOrDefault()),
             requiredCollateralRatio: formatDecimal(requiredCollateralRatio.unwrapOrDefault()),
             debitExhcnageRate: formatDecimal(rate),
-            totalDebit: formatBalance(total.debit.mul(rate).div(new BN((1e18).toString())), stableCurrency.decimal),
-            totalCollateral: formatBalance(total.collateral, decimal),
+            totalDebit: formatBalance(debitValue, stableCurrency.decimals),
+            totalCollateral: formatBalance(total.collateral, decimals),
+            totalCollateralValue: formatBalance(collateralValue),
+            capitalEfficiency: formatDecimal(debitValue.div(collateralValue)),
             other: {
               currency,
-              decimal,
+              token,
               rate,
+              price,
+              liquidationRatio: liquidationRatio.unwrapOrDefault(),
             },
           }
         }
       )
     )
 
-    console.table(Object.fromEntries(honzonData.map(({ currencyName, other: _, ...value }) => [currencyName, value])))
+    table(Object.fromEntries(honzonData.map(({ currencyName, other: _, ...value }) => [currencyName, value])))
 
     for (const params of honzonData) {
       const currency = params.other.currency
@@ -79,17 +89,45 @@ runner()
         )
       )
 
-      result.sort((a, b) => b[1].debit.cmp(a[1].debit))
+      const data = result.flatMap(([key, value]) => {
+        const account = key.args[1]
+
+        if (value.debit.eqn(0)) {
+          return []
+        }
+
+        const debit = FixedPointNumber.fromInner(value.debit.toString(), stableCurrency.decimals).mul(params.other.rate)
+        const collateralValue = params.other.price.mul(
+          FixedPointNumber.fromInner(value.collateral.toString(), stableCurrency.decimals)
+        )
+
+        const liquidationRatio = FixedPointNumber.fromInner(params.other.liquidationRatio.toString())
+
+        const liquidationPrice = debit.mul(liquidationRatio).div(collateralValue).mul(params.other.price)
+
+        return [
+          {
+            account,
+            debit,
+            collateral: value.collateral,
+            collateralValue,
+            collateralRatio: collateralValue.div(debit),
+            liquidationPrice,
+          },
+        ]
+      })
+
+      data.sort((a, b) => a.collateralRatio.toNumber() - b.collateralRatio.toNumber())
 
       table(
-        result.slice(0, 3).map(([key, value]) => ({
+        data.slice(0, 3).map((value) => ({
           token: params.currencyName,
-          acc: logFormat(key.args[1]),
-          collateral: formatBalance(value.collateral),
-          debit: formatBalance(
-            value.debit.mul(params.other.rate).div(new BN((1e18).toString())),
-            stableCurrency.decimal
-          ),
+          acc: logFormat(value.account),
+          debit: formatBalance(value.debit, stableCurrency.decimals),
+          collateral: formatBalance(value.collateral, params.other.token.decimals),
+          collateralValue: formatBalance(value.collateralValue, stableCurrency.decimals),
+          collateralRatio: formatDecimal(value.collateralRatio),
+          liquidationPrice: formatBalance(value.liquidationPrice, stableCurrency.decimals),
         }))
       )
     }
