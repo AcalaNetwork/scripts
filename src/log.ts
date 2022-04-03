@@ -12,6 +12,12 @@ export const logFormat = (x: any): any => {
   if (x == null) {
     return x
   }
+  if (x instanceof BN) {
+    return x.toString()
+  }
+  if (x instanceof FixedPointNumber) {
+    return x.toString()
+  }
   if (x.toHuman) {
     return x.toHuman()
   }
@@ -51,10 +57,10 @@ export const formatBalance = (x: number | BN | string | FixedPointNumber, decima
 
   if (config.output === 'console') {
     if (n > 1e6) {
-      return `${formatDecimal(n / 1e6, 4)}M`
+      return `${formatDecimal(n / 1e6, 2)}M`
     }
     if (n > 1e3) {
-      return `${formatDecimal(n / 1e3, 4)}K`
+      return `${formatDecimal(n / 1e3, 2)}K`
     }
   }
 
