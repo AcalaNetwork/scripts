@@ -98,7 +98,7 @@ runner()
 
         const debit = FixedPointNumber.fromInner(value.debit.toString(), stableCurrency.decimals).mul(params.other.rate)
         const collateralValue = params.other.price.mul(
-          FixedPointNumber.fromInner(value.collateral.toString(), stableCurrency.decimals)
+          FixedPointNumber.fromInner(value.collateral.toString(), params.other.token.decimals)
         )
 
         const liquidationRatio = FixedPointNumber.fromInner(params.other.liquidationRatio.toString())
