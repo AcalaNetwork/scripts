@@ -11,7 +11,7 @@ import runner from '../runner'
 runner()
   .requiredNetwork(['acala', 'karura'])
   .withApiRx()
-  .atLatestBlock()
+  .atBlock()
   .run(async ({ apiAt }) => {
     const collaterals = await firstValueFrom(apiAt.query.cdpEngine.collateralParams.keys())
 

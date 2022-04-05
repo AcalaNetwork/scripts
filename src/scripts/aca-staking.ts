@@ -11,7 +11,7 @@ import runner from '../runner'
 runner()
   .requiredNetwork(['acala', 'karura'])
   .withApiPromise()
-  .atLatestBlock()
+  .atBlock()
   .run(async ({ apiAt }) => {
     const totalIssuance = await apiAt.query.balances.totalIssuance()
 

@@ -3,6 +3,7 @@ import { ApiDecoration, ApiTypes } from '@polkadot/api/types'
 import { ApiPromise, ApiRx } from '@polkadot/api'
 import { Networks, getApiPromise, getApiRx, getNetworks } from './networks'
 import { Observable, firstValueFrom } from 'rxjs'
+import moment from 'moment'
 import yargs from 'yargs'
 
 export const config = {
@@ -34,13 +35,9 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     return this as Runner<ApiPromise, 'promise', ApiAt>
   }
 
-  atBlock(at: 'latest' | number) {
+  atBlock(at: 'latest' | number = 'latest') {
     this.#at = at
     return this as unknown as Runner<Api, ApiType, ApiDecoration<ApiType>>
-  }
-
-  atLatestBlock() {
-    return this.atBlock('latest')
   }
 
   #getApi(network: Networks) {
@@ -58,9 +55,83 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     return x as Promise<B>
   }
 
+  async #getTime(api: AnyApi, hash: string) {
+    const apiAt = await api.at(hash)
+    const time = await this.#toPromise(apiAt.query.timestamp.now())
+    return time.toNumber()
+  }
+
+  async #getHash(api: AnyApi, blockNo: number) {
+    const hash = await this.#toPromise(api.rpc.chain.getBlockHash(blockNo))
+    return hash.toString()
+  }
+
+  async #parseBlock(api: AnyApi, block: number | string | undefined): Promise<number | 'latest'> {
+    switch (block) {
+      case undefined:
+      case null:
+      case 'latest':
+        return 'latest'
+    }
+
+    if (typeof block === 'number') {
+      return block
+    }
+
+    if (block.match(/^\d+$/)) {
+      return parseInt(block, 10)
+    }
+
+    const header = await this.#toPromise(api.rpc.chain.getHeader())
+    const num = header.number.toNumber()
+
+    if (block.match(/^-\d+$/)) {
+      const n = parseInt(block, 10)
+      return num - n
+    }
+
+    const t1 = await this.#getTime(api, header.hash.toString())
+    const t2 = await this.#getTime(api, await this.#getHash(api, num - 1000))
+
+    const blockTime = (t1 - t2) / 1000
+
+    const [, n, t] = block.match(/^(\d+)([wdhms])$/) || []
+
+    if (n === undefined || t === undefined) {
+      throw new Error(`Invalid block format: ${block}`)
+    }
+
+    let unit
+    switch (t) {
+      case 'w':
+        unit = 7 * 24 * 60 * 60 * 1000
+        break
+      case 'd':
+        unit = 24 * 60 * 60 * 1000
+        break
+      case 'h':
+        unit = 60 * 60 * 1000
+        break
+      case 'm':
+        unit = 60 * 1000
+        break
+      case 's':
+        unit = 1000
+        break
+      default:
+        throw new Error(`Invalid block format: ${block}`)
+    }
+
+    const total = parseInt(n, 10) * unit
+    const blockNo = Math.floor(total / blockTime)
+
+    return num - blockNo
+  }
+
   async #run(fn: (c: Context<Api, ApiAt>) => Promise<any>) {
     const argv = yargs.argv as any
 
+    const block = argv.block
     config.output = argv.output || 'console'
 
     let networks
@@ -113,16 +184,22 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
       } else {
         let hash
         let number
-        if (this.#at !== 'latest') {
-          hash = await this.#toPromise(api.rpc.chain.getBlockHash(this.#at))
-          number = this.#at
-        } else {
-          const header = await this.#toPromise(api.rpc.chain.getHeader())
-          hash = header.hash
-          number = header.number.toNumber()
+
+        if (block !== undefined) {
+          this.#at = await this.#parseBlock(api, block)
         }
 
-        console.log('Block Number:', number)
+        if (this.#at === 'latest') {
+          const header = await this.#toPromise(api.rpc.chain.getHeader())
+          hash = header.hash.toString()
+          number = header.number.toNumber()
+        } else {
+          hash = await this.#getHash(api, this.#at)
+          number = this.#at
+        }
+
+        const time = moment(await this.#getTime(api, hash))
+        console.log('Block Number:', number, 'Time:', time.format(), time.fromNow())
         apiAt = (await api.at(hash)) as unknown as ApiAt
       }
 

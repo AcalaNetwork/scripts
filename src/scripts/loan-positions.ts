@@ -18,7 +18,7 @@ import runner from '../runner'
 runner()
   .requiredNetwork(['acala', 'karura'])
   .withApiRx()
-  .atLatestBlock()
+  .atBlock()
   .run(async ({ api, apiAt }) => {
     const wallet = new WalletRx(api)
     // const homa = new Homa(api, wallet)
