@@ -15,10 +15,15 @@ class Context<Api, ApiAt> {
   constructor(public network: Networks, public api: Api, public apiAt: ApiAt) {}
 }
 
+interface RunOptions {
+  network: Networks
+  at: number | string | undefined
+}
+
 export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
   #requiredNetwork: Networks[] = ['acala', 'karura', 'polkadot', 'kusama']
   #withApiRx = false
-  #at: 'latest' | number | undefined
+  #at: 'now' | number | undefined
 
   requiredNetwork(network: Networks[]) {
     this.#requiredNetwork = network
@@ -35,7 +40,7 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     return this as Runner<ApiPromise, 'promise', ApiAt>
   }
 
-  atBlock(at: 'latest' | number = 'latest') {
+  atBlock(at: 'now' | number = 'now') {
     this.#at = at
     return this as unknown as Runner<Api, ApiType, ApiDecoration<ApiType>>
   }
@@ -66,27 +71,27 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     return hash.toString()
   }
 
-  async #parseBlock(api: AnyApi, block: number | string | undefined): Promise<number | 'latest'> {
-    switch (block) {
+  async #parseAt(api: AnyApi, at: number | string | undefined): Promise<number | 'now'> {
+    switch (at) {
       case undefined:
       case null:
-      case 'latest':
-        return 'latest'
+      case 'now':
+        return 'now'
     }
 
-    if (typeof block === 'number') {
-      return block
+    if (typeof at === 'number') {
+      return at
     }
 
-    if (block.match(/^\d+$/)) {
-      return parseInt(block, 10)
+    if (at.match(/^\d+$/)) {
+      return parseInt(at, 10)
     }
 
     const header = await this.#toPromise(api.rpc.chain.getHeader())
     const num = header.number.toNumber()
 
-    if (block.match(/^-\d+$/)) {
-      const n = parseInt(block, 10)
+    if (at.match(/^-\d+$/)) {
+      const n = parseInt(at, 10)
       return num - n
     }
 
@@ -95,10 +100,10 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
 
     const blockTime = (t1 - t2) / 1000
 
-    const [, n, t] = block.match(/^(\d+)([wdhms])$/) || []
+    const [, n, t] = at.match(/^(\d+)([wdhms])$/) || []
 
     if (n === undefined || t === undefined) {
-      throw new Error(`Invalid block format: ${block}`)
+      throw new Error(`Invalid at format: ${at}`)
     }
 
     let unit
@@ -119,7 +124,7 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
         unit = 1000
         break
       default:
-        throw new Error(`Invalid block format: ${block}`)
+        throw new Error(`Invalid at format: ${at}`)
     }
 
     const total = parseInt(n, 10) * unit
@@ -128,11 +133,62 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     return num - blockNo
   }
 
+  async #runOne({ network, at }: RunOptions, fn: (c: Context<Api, ApiAt>) => Promise<any>) {
+    if (!this.#requiredNetwork.includes(network)) {
+      throw new Error(`Network not supported: ${network}. Supported networks: ${this.#requiredNetwork.join(', ')}`)
+    }
+
+    config.network = network
+    console.log('Network:', network)
+
+    const api = this.#getApi(network)
+
+    await this.#toPromise(api.isReady)
+
+    const parsedAt = await this.#parseAt(api, at)
+
+    let apiAt: ApiAt
+    if (this.#at === undefined) {
+      apiAt = undefined as unknown as ApiAt
+      if (at) {
+        throw new Error('at is not supported')
+      }
+    } else {
+      let hash
+      let number
+
+      if (parsedAt === 'now') {
+        const header = await this.#toPromise(api.rpc.chain.getHeader())
+        hash = header.hash.toString()
+        number = header.number.toNumber()
+      } else {
+        hash = await this.#getHash(api, parsedAt)
+        number = parsedAt
+      }
+
+      const time = moment(await this.#getTime(api, hash))
+      console.log('Block Number:', number, 'Time:', time.format(), time.fromNow())
+      apiAt = (await api.at(hash)) as unknown as ApiAt
+    }
+
+    await fn(new Context(network, api, apiAt))
+
+    console.log()
+  }
+
   async #run(fn: (c: Context<Api, ApiAt>) => Promise<any>) {
     const argv = yargs.argv as any
 
-    const block = argv.block
     config.output = argv.output || 'console'
+
+    const atList: Array<number | string | undefined> = ((argv.at as string) || '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0)
+
+    if (atList.length === 0) {
+      atList.push(this.#at)
+    }
 
     let networks
 
@@ -166,46 +222,10 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
       }
     }
 
-    for (const network of networks) {
-      if (!this.#requiredNetwork.includes(network)) {
-        throw new Error(`Network not supported: ${network}. Supported networks: ${this.#requiredNetwork.join(', ')}`)
+    for (const at of atList) {
+      for (const network of networks) {
+        await this.#runOne({ network, at }, fn)
       }
-
-      config.network = network
-      console.log('Network:', network)
-
-      const api = this.#getApi(network)
-
-      await this.#toPromise(api.isReady)
-
-      let apiAt: ApiAt
-      if (this.#at === undefined) {
-        apiAt = undefined as unknown as ApiAt
-      } else {
-        let hash
-        let number
-
-        if (block !== undefined) {
-          this.#at = await this.#parseBlock(api, block)
-        }
-
-        if (this.#at === 'latest') {
-          const header = await this.#toPromise(api.rpc.chain.getHeader())
-          hash = header.hash.toString()
-          number = header.number.toNumber()
-        } else {
-          hash = await this.#getHash(api, this.#at)
-          number = this.#at
-        }
-
-        const time = moment(await this.#getTime(api, hash))
-        console.log('Block Number:', number, 'Time:', time.format(), time.fromNow())
-        apiAt = (await api.at(hash)) as unknown as ApiAt
-      }
-
-      await fn(new Context(network, api, apiAt))
-
-      console.log()
     }
   }
 
