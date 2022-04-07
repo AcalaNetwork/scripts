@@ -80,7 +80,13 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     }
 
     if (typeof at === 'number') {
-      return at
+      if (at > 0) {
+        return at
+      } else {
+        const header = await this.#toPromise(api.rpc.chain.getHeader())
+        const num = header.number.toNumber()
+        return num + at
+      }
     }
 
     if (at.match(/^\d+$/)) {
@@ -181,13 +187,19 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
 
     config.output = argv.output || 'console'
 
-    const atList: Array<number | string | undefined> = ((argv.at as string) || '')
-      .split(',')
-      .map((x) => x.trim())
-      .filter((x) => x.length > 0)
+    let atList: Array<number | string | undefined>
 
-    if (atList.length === 0) {
-      atList.push(this.#at)
+    if (typeof argv.at === 'number') {
+      atList = [argv.at]
+    } else {
+      atList = ((argv.at as string) || '')
+        .split(',')
+        .map((x) => x.trim())
+        .filter((x) => x.length > 0)
+
+      if (atList.length === 0) {
+        atList.push(this.#at)
+      }
     }
 
     let networks
