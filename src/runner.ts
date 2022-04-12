@@ -139,7 +139,7 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     return num - blockNo
   }
 
-  async #runOne({ network, at }: RunOptions, fn: (c: Context<Api, ApiAt>) => Promise<any>) {
+  async #runOne({ network, at }: RunOptions, fn: (c: Context<Api, ApiAt>) => Promise<any> | void) {
     if (!this.#requiredNetwork.includes(network)) {
       throw new Error(`Network not supported: ${network}. Supported networks: ${this.#requiredNetwork.join(', ')}`)
     }
@@ -182,7 +182,7 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     console.log()
   }
 
-  async #run(fn: (c: Context<Api, ApiAt>) => Promise<any>) {
+  async #run(fn: (c: Context<Api, ApiAt>) => Promise<any> | void) {
     const argv = yargs.argv as any
 
     config.output = argv.output || 'console'
@@ -241,7 +241,7 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
     }
   }
 
-  run(fn: (c: Context<Api, ApiAt>) => Promise<any>): void {
+  run(fn: (c: Context<Api, ApiAt>) => Promise<any> | void): void {
     this.#run(fn)
       .then(() => {
         process.exit(0)
