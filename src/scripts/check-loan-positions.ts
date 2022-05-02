@@ -6,11 +6,10 @@ import '@acala-network/types/interfaces/types-lookup'
 import type { AcalaPrimitivesCurrencyCurrencyId } from '@polkadot/types/lookup'
 
 import { firstValueFrom } from 'rxjs'
+import yargs from 'yargs'
 
-// import { Homa } from '@acala-network/sdk'
 import { FixedPointNumber } from '@acala-network/sdk-core'
 import { WalletRx } from '@acala-network/sdk-wallet'
-import { fetchEntriesToArray } from '@open-web3/util'
 
 import { formatBalance, formatDecimal, logFormat, table } from '../log'
 import runner from '../runner'
@@ -20,8 +19,17 @@ runner()
   .withApiRx()
   .atBlock()
   .run(async ({ api, apiAt }) => {
+    const argv = yargs.argv as any
+    const addresses = ((argv.address as string) || '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0)
+
+    if (addresses.length === 0) {
+      throw new Error('Please pass address with `--address=xxx,xxx`')
+    }
+
     const wallet = new WalletRx(api)
-    // const homa = new Homa(api, wallet)
 
     const collaterals = await firstValueFrom(apiAt.query.cdpEngine.collateralParams.entries())
 
@@ -77,61 +85,56 @@ runner()
 
     table(Object.fromEntries(honzonData.map(({ currencyName, other: _, ...value }) => [currencyName, value])))
 
-    for (const params of honzonData) {
-      const currency = params.other.currency
-      const result = await fetchEntriesToArray((startKey) =>
-        firstValueFrom(
-          apiAt.query.loans.positions.entriesPaged({
-            args: [currency],
-            pageSize: 500,
-            startKey,
-          })
-        )
-      )
+    for (const addr of addresses) {
+      const result = await Promise.all(
+        honzonData.map(async (params) => {
+          const currency = params.other.currency
+          const pos = await firstValueFrom(apiAt.query.loans.positions(currency, addr))
+          if (pos.debit.eqn(0)) {
+            return null
+          }
 
-      const data = result.flatMap(([key, value]) => {
-        const account = key.args[1]
+          const debit = FixedPointNumber.fromInner(pos.debit.toString(), stableCurrency.decimals).mul(params.other.rate)
+          const collateralValue = params.other.price.mul(
+            FixedPointNumber.fromInner(pos.collateral.toString(), params.other.token.decimals)
+          )
 
-        if (value.debit.eqn(0)) {
-          return []
-        }
+          const liquidationRatio = FixedPointNumber.fromInner(params.other.liquidationRatio.toString())
+          const liquidationPrice = debit.mul(liquidationRatio).div(collateralValue).mul(params.other.price)
+          const collateralRatio = collateralValue.div(debit)
+          const buffer = 1 - liquidationRatio.div(collateralRatio).toNumber()
 
-        const debit = FixedPointNumber.fromInner(value.debit.toString(), stableCurrency.decimals).mul(params.other.rate)
-        const collateralValue = params.other.price.mul(
-          FixedPointNumber.fromInner(value.collateral.toString(), params.other.token.decimals)
-        )
-
-        const liquidationRatio = FixedPointNumber.fromInner(params.other.liquidationRatio.toString())
-        const liquidationPrice = debit.mul(liquidationRatio).div(collateralValue).mul(params.other.price)
-        const collateralRatio = collateralValue.div(debit)
-        const buffer = 1 - liquidationRatio.div(collateralRatio).toNumber()
-
-        return [
-          {
-            account,
+          return {
+            account: addr,
             debit,
-            collateral: value.collateral,
+            collateral: pos.collateral,
             collateralValue,
             collateralRatio,
             liquidationPrice,
             buffer,
-          },
-        ]
-      })
-
-      data.sort((a, b) => a.collateralRatio.toNumber() - b.collateralRatio.toNumber())
+            token: params.currencyName,
+            decimals: params.other.token.decimals,
+          }
+        })
+      )
 
       table(
-        data.slice(0, 3).map((value) => ({
-          token: params.currencyName,
-          acc: logFormat(value.account),
-          debit: formatBalance(value.debit, stableCurrency.decimals),
-          collateral: formatBalance(value.collateral, params.other.token.decimals),
-          collateralValue: formatBalance(value.collateralValue, stableCurrency.decimals),
-          collateralRatio: formatDecimal(value.collateralRatio),
-          liquidationPrice: formatBalance(value.liquidationPrice, stableCurrency.decimals),
-          buffer: formatDecimal(value.buffer),
-        }))
+        result.flatMap((value) =>
+          value
+            ? [
+                {
+                  acc: logFormat(value.account),
+                  token: value.token,
+                  debit: formatBalance(value.debit, stableCurrency.decimals),
+                  collateral: formatBalance(value.collateral, value.decimals),
+                  collateralValue: formatBalance(value.collateralValue, stableCurrency.decimals),
+                  collateralRatio: formatDecimal(value.collateralRatio),
+                  liquidationPrice: formatBalance(value.liquidationPrice, stableCurrency.decimals),
+                  buffer: formatDecimal(value.buffer),
+                },
+              ]
+            : []
+        )
       )
     }
   })

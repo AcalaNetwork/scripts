@@ -9,9 +9,9 @@ runner()
   .run(async ({ api }) => {
     const token = { Token: 'KSM' } as any
     const interestRatePerSec = 'NoChange'
-    const liquidationRatio = { NewValue: 1_250_000_000_000_000_000n } // 'NoChange'
+    const liquidationRatio = 'NoChange'
     const liquidationPenalty = 'NoChange'
-    const requiredCollateralRatio = 'NoChange'
+    const requiredCollateralRatio = { NewValue: 1_500_000_000_000_000_000n } // 'NoChange'
     const maximumTotalDebitValue = 'NoChange' // { NewValue: 6_000_000_000_000_000_000n }
     const proposal = api.tx.cdpEngine.setCollateralParams(
       token,
