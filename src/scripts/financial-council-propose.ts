@@ -7,12 +7,12 @@ runner()
   .requiredNetwork(['acala', 'karura'])
   .withApiPromise()
   .run(async ({ api }) => {
-    const token = { LiquidCrowdloan: 13 } as any
+    const token = { Token: 'KSM' } as any
     const interestRatePerSec = 'NoChange'
-    const liquidationRatio = 'NoChange'
+    const liquidationRatio = { NewValue: 1_250_000_000_000_000_000n } // 'NoChange'
     const liquidationPenalty = 'NoChange'
     const requiredCollateralRatio = 'NoChange'
-    const maximumTotalDebitValue = { NewValue: 6_000_000_000_000_000_000n }
+    const maximumTotalDebitValue = 'NoChange' // { NewValue: 6_000_000_000_000_000_000n }
     const proposal = api.tx.cdpEngine.setCollateralParams(
       token,
       interestRatePerSec,
@@ -26,7 +26,7 @@ runner()
 
     const hash = proposal.method.hash
 
-    const index = (await api.query.financialCouncil.proposalCount()).toNumber() - 1
+    const index = (await api.query.financialCouncil.proposalCount()).toNumber()
 
     const vote = api.tx.financialCouncil.vote(hash, index, true)
     console.log('Vote', vote.toHex())
