@@ -7,12 +7,12 @@ runner()
   .requiredNetwork(['acala', 'karura'])
   .withApiPromise()
   .run(async ({ api }) => {
-    const token = { Token: 'KSM' } as any
-    const interestRatePerSec = 'NoChange'
-    const liquidationRatio = 'NoChange'
-    const liquidationPenalty = 'NoChange'
-    const requiredCollateralRatio = { NewValue: 1_500_000_000_000_000_000n } // 'NoChange'
-    const maximumTotalDebitValue = 'NoChange' // { NewValue: 6_000_000_000_000_000_000n }
+    const token = { StableAssetPoolToken: 0 } as any
+    const interestRatePerSec = { NewValue: 0 } // 'NoChange'
+    const liquidationRatio = { NewValue: 1_600_000_000_000_000_000n } //'NoChange'
+    const liquidationPenalty = { NewValue: 150_000_000_000_000_000n } // 'NoChange'
+    const requiredCollateralRatio = { NewValue: 2_100_000_000_000_000_000n } // 'NoChange'
+    const maximumTotalDebitValue = { NewValue: 0 } //  'NoChange' // { NewValue: 6_000_000_000_000_000_000n }
     const proposal = api.tx.cdpEngine.setCollateralParams(
       token,
       interestRatePerSec,

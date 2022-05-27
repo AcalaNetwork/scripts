@@ -3,8 +3,6 @@
 import '@acala-network/types'
 import '@acala-network/types/interfaces/types-lookup'
 
-import type { AcalaPrimitivesCurrencyCurrencyId } from '@polkadot/types/lookup'
-
 import { firstValueFrom } from 'rxjs'
 
 import { FixedPointNumber } from '@acala-network/sdk-core'
@@ -25,51 +23,51 @@ runner()
     const stableCurrency = wallet.getToken(apiAt.consts.cdpEngine.getStableCurrencyId)
 
     const honzonData = await Promise.all(
-      collaterals.map(
-        async ([
-          key,
-          { interestRatePerSec, maximumTotalDebitValue, liquidationRatio, liquidationPenalty, requiredCollateralRatio },
-        ]) => {
-          const currency = key.args[0]
-          const token = wallet.getToken(currency)
-          const decimals = token.decimals
-          const total = await firstValueFrom(
-            apiAt.query.loans.totalPositions(currency as AcalaPrimitivesCurrencyCurrencyId)
-          )
-          const rateValue = (await firstValueFrom(apiAt.query.cdpEngine.debitExchangeRate(currency))).unwrapOr(
-            apiAt.consts.cdpEngine.defaultDebitExchangeRate
-          )
-          const rate = FixedPointNumber.fromInner(rateValue.toString(), 18)
-          const price = (await firstValueFrom(wallet.queryPrice(token))).price
+      collaterals.map(async ([key, data]) => {
+        const {
+          interestRatePerSec,
+          maximumTotalDebitValue,
+          liquidationRatio,
+          liquidationPenalty,
+          requiredCollateralRatio,
+        } = (data as any).unwrap()
+        const currency = key.args[0]
+        const token = wallet.getToken(currency)
+        const decimals = token.decimals
+        const total = await firstValueFrom(apiAt.query.loans.totalPositions(currency))
+        const rateValue = (await firstValueFrom(apiAt.query.cdpEngine.debitExchangeRate(currency))).unwrapOr(
+          apiAt.consts.cdpEngine.defaultDebitExchangeRate
+        )
+        const rate = FixedPointNumber.fromInner(rateValue.toString(), 18)
+        const price = (await firstValueFrom(wallet.queryPrice(token))).price
 
-          const collateralValue = price.mul(FixedPointNumber.fromInner(total.collateral.toString(), decimals))
-          const debitNumber = FixedPointNumber.fromInner(total.debit.toString(), stableCurrency.decimals)
-          const debitValue = debitNumber.mul(rate)
+        const collateralValue = price.mul(FixedPointNumber.fromInner(total.collateral.toString(), decimals))
+        const debitNumber = FixedPointNumber.fromInner(total.debit.toString(), stableCurrency.decimals)
+        const debitValue = debitNumber.mul(rate)
 
-          return {
-            currencyName: token.display,
-            interestRatePerYear: formatDecimal(
-              (interestRatePerSec.unwrapOrDefault().toNumber() / 1e18 + 1) ** (365 * 86400) - 1
-            ),
-            maxTotalDebitValue: formatBalance(maximumTotalDebitValue, stableCurrency.decimals),
-            liquidationRatio: formatDecimal(liquidationRatio.unwrapOrDefault()),
-            liquidationPenalty: formatDecimal(liquidationPenalty.unwrapOrDefault()),
-            requiredCollateralRatio: formatDecimal(requiredCollateralRatio.unwrapOrDefault()),
-            debitExhcnageRate: formatDecimal(rate),
-            totalDebit: formatBalance(debitValue, stableCurrency.decimals),
-            totalCollateral: formatBalance(total.collateral, decimals),
-            totalCollateralValue: formatBalance(collateralValue),
-            capitalEfficiency: formatDecimal(debitValue.div(collateralValue)),
-            other: {
-              currency,
-              token,
-              rate,
-              price,
-              liquidationRatio: liquidationRatio.unwrapOrDefault(),
-            },
-          }
+        return {
+          currencyName: token.display,
+          interestRatePerYear: formatDecimal(
+            (interestRatePerSec.unwrapOrDefault().toNumber() / 1e18 + 1) ** (365 * 86400) - 1
+          ),
+          maxTotalDebitValue: formatBalance(maximumTotalDebitValue, stableCurrency.decimals),
+          liquidationRatio: formatDecimal(liquidationRatio.unwrapOrDefault()),
+          liquidationPenalty: formatDecimal(liquidationPenalty.unwrapOrDefault()),
+          requiredCollateralRatio: formatDecimal(requiredCollateralRatio.unwrapOrDefault()),
+          debitExhcnageRate: formatDecimal(rate),
+          totalDebit: formatBalance(debitValue, stableCurrency.decimals),
+          totalCollateral: formatBalance(total.collateral, decimals),
+          totalCollateralValue: formatBalance(collateralValue),
+          capitalEfficiency: formatDecimal(debitValue.div(collateralValue)),
+          other: {
+            currency,
+            token,
+            rate,
+            price,
+            liquidationRatio: liquidationRatio.unwrapOrDefault(),
+          },
         }
-      )
+      })
     )
 
     table(Object.fromEntries(honzonData.map(({ currencyName, other: _, ...value }) => [currencyName, value])))
