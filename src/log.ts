@@ -45,8 +45,11 @@ export const formatDecimal = (x: number | BN | string | FixedPointNumber, length
   return Math.round(n * 10 ** length) / 10 ** length
 }
 
-export const formatBalance = (x: number | BN | string | FixedPointNumber, decimal = 12) => {
+export const formatBalance = (x: number | BN | string | FixedPointNumber | undefined | null, decimal = 12) => {
   let n
+  if (x == null) {
+    return '-'
+  }
   if (x instanceof FixedPointNumber) {
     n = x.toNumber()
   } else if (typeof x === 'number') {
