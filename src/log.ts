@@ -45,7 +45,7 @@ export const formatDecimal = (x: number | BN | string | FixedPointNumber, length
   return Math.round(n * 10 ** length) / 10 ** length
 }
 
-export const formatBalance = (x: number | BN | string | FixedPointNumber | undefined | null, decimal = 12) => {
+export const formatBalance = (x: number | BN | string | FixedPointNumber | bigint | undefined | null, decimal = 12) => {
   let n
   if (x == null) {
     return '-'
@@ -82,6 +82,7 @@ export const table = (data: any) => {
       csvStream.write(data)
     }
     csvStream.end()
+    console.log()
     console.log()
   } else {
     console.table(data)
