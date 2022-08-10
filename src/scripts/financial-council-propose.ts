@@ -8,11 +8,11 @@ runner()
   .withApiPromise()
   .run(async ({ api }) => {
     const proposal1 = () => {
-      const token = { Token: 'LKSM' } as any
+      const token = { Token: 'ACA' } as any
       const interestRatePerSec = 'NoChange' // { NewValue: 0 } // 'NoChange'
-      const liquidationRatio = { NewValue: 1_750_000_000_000_000_000n } //'NoChange'
+      const liquidationRatio = { NewValue: 1_600_000_000_000_000_000n } //'NoChange'
       const liquidationPenalty = 'NoChange' // { NewValue: 150_000_000_000_000_000n } // 'NoChange'
-      const requiredCollateralRatio = { NewValue: 2_200_000_000_000_000_000n } // 'NoChange'
+      const requiredCollateralRatio = { NewValue: 1_950_000_000_000_000_000n } // 'NoChange'
       const maximumTotalDebitValue = 'NoChange' // { NewValue: 0 }
       const proposal = api.tx.cdpEngine.setCollateralParams(
         token,
@@ -26,11 +26,11 @@ runner()
     }
 
     const proposal2 = () => {
-      const token = { Token: 'KAR' } as any
-      const interestRatePerSec = 'NoChange' // { NewValue: 0 } // 'NoChange'
-      const liquidationRatio = { NewValue: 1_500_000_000_000_000_000n } //'NoChange'
+      const token = { Token: 'LDOT' } as any
+      const interestRatePerSec = 'NoChange' // { NewValue: 860_244_000n } // 'NoChange'
+      const liquidationRatio = { NewValue: 2_350_000_000_000_000_000n } //'NoChange'
       const liquidationPenalty = 'NoChange' // { NewValue: 150_000_000_000_000_000n } // 'NoChange'
-      const requiredCollateralRatio = 'NoChange' // { NewValue: 2_100_000_000_000_000_000n } // 'NoChange'
+      const requiredCollateralRatio = 'NoChange' // { NewValue: 1_600_000_000_000_000_000n } // 'NoChange'
       const maximumTotalDebitValue = 'NoChange' // { NewValue: 6_000_000_000_000_000_000n }
       const proposal = api.tx.cdpEngine.setCollateralParams(
         token,
@@ -44,9 +44,9 @@ runner()
     }
 
     // const proposal3 = () => {
-    //   const token = { Token: 'LDOT' } as any
+    //   const token = { liquidCrowdloan: 13 } as any
     //   const interestRatePerSec = 'NoChange' // { NewValue: 0 } // 'NoChange'
-    //   const liquidationRatio = { NewValue: 2_200_000_000_000_000_000n } //'NoChange'
+    //   const liquidationRatio = 'NoChange' // { NewValue: 2_350_000_000_000_000_000n } //'NoChange'
     //   const liquidationPenalty = 'NoChange' // { NewValue: 150_000_000_000_000_000n } // 'NoChange'
     //   const requiredCollateralRatio = { NewValue: 2_800_000_000_000_000_000n } // 'NoChange'
     //   const maximumTotalDebitValue = 'NoChange' // { NewValue: 6_000_000_000_000_000_000n }
@@ -62,11 +62,11 @@ runner()
     // }
 
     // const proposal4 = () => {
-    //   const token = { Token: 'ACA' } as any
+    //   const token = { Token: 'LDOT' } as any
     //   const interestRatePerSec = 'NoChange' // { NewValue: 0 } // 'NoChange'
-    //   const liquidationRatio = { NewValue: 1_900_000_000_000_000_000n } //'NoChange'
+    //   const liquidationRatio = 'NoChange' // { NewValue: 2_400_000_000_000_000_000n } //'NoChange'
     //   const liquidationPenalty = 'NoChange' // { NewValue: 150_000_000_000_000_000n } // 'NoChange'
-    //   const requiredCollateralRatio = 'NoChange' // { NewValue: 2_800_000_000_000_000_000n } // 'NoChange'
+    //   const requiredCollateralRatio = { NewValue: 2_800_000_000_000_000_000n } // 'NoChange'
     //   const maximumTotalDebitValue = 'NoChange' // { NewValue: 6_000_000_000_000_000_000n }
     //   const proposal = api.tx.cdpEngine.setCollateralParams(
     //     token,
