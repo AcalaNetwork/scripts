@@ -48,7 +48,7 @@ After Diff: Current Balance - After Balance
       '{"token":"AUSD"}': 'AUSD',
       '{"token":"DOT"}': 'DOT',
       '{"token":"LDOT"}': 'LDOT',
-      '{"liquidCrowdloan":13}': 'LDOT',
+      '{"liquidCrowdloan":13}': 'LDCOT',
       '{"foreignAsset":3}': 'INTR',
       '{"foreignAsset":4}': 'iBTC',
       '{"stableAssetPoolToken":0}': 'tDOT',
