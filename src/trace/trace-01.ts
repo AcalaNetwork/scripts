@@ -124,8 +124,8 @@ After Diff: Current Balance - After Balance
         free[name].after = f
       }
 
-      for (const { name: token, after, before } of Object.values(free)) {
-        const diff = BigInt(after ?? 0n) - BigInt(before ?? 0n)
+      for (const { name: token, now, before } of Object.values(free)) {
+        const diff = BigInt(now ?? 0n) - BigInt(before ?? 0n)
         if (diff > 0n) {
           if (token === 'AUSD') {
             reclaimAusd[name] = (reclaimAusd[name] || 0n) + diff
