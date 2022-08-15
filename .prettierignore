@@ -1,0 +1,6 @@
+.serverless
+.yarn
+*.json
+.eslintrc.js
+.build
+.yarnrc.yml
