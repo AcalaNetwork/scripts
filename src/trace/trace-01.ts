@@ -49,11 +49,11 @@ After Diff: Current Balance - After Balance
       '{"token":"DOT"}': 'DOT',
       '{"token":"LDOT"}': 'LDOT',
       '{"liquidCrowdloan":13}': 'LCDOT',
-      '{"foreignAsset":3}': 'INTR',
-      '{"foreignAsset":4}': 'iBTC',
+      '{"foreignAsset":3}': 'iBTC',
+      '{"foreignAsset":4}': 'INTR',
       '{"stableAssetPoolToken":0}': 'tDOT',
-      '{"dexShare":[{"token":"AUSD"},{"foreignAsset":3}]}': 'AUSD/INTR',
-      '{"dexShare":[{"token":"AUSD"},{"foreignAsset":4}]}': 'AUSD/iBTC',
+      '{"dexShare":[{"token":"AUSD"},{"foreignAsset":3}]}': 'AUSD/iBTC',
+      '{"dexShare":[{"token":"AUSD"},{"foreignAsset":4}]}': 'AUSD/INTR',
     } as Record<string, string>
 
     const stableCurrency = wallet.getToken(api.consts.cdpEngine.getStableCurrencyId)
