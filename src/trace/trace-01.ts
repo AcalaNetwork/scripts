@@ -11,8 +11,9 @@ import runner from '../runner'
 
 runner()
   .requiredNetwork(['acala'])
+  .atBlock()
   .withApiPromise()
-  .run(async ({ api }) => {
+  .run(async ({ api, apiAt }) => {
     console.log(`
 Error Mint aUSD On Account: min(Current Balance, Total Claim)
 Current Balance: Balance when running this script
@@ -90,7 +91,7 @@ After Diff: Current Balance - After Balance
       )
     }
 
-    const blockNow = (await api.query.system.number()).toNumber()
+    const blockNow = (await apiAt.query.system.number()).toNumber()
 
     const addresses = Object.keys(all)
     const dataBefore = await queryData(beforeBlock, addresses)
