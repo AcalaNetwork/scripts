@@ -64,6 +64,9 @@ After Diff: Current Balance - After Balance
 
     for (const [who, amount] of processed) {
       all[who] -= amount
+      if (all[who] === 0n) {
+        delete all[who]
+      }
     }
 
     const beforeBlock = 1638215
@@ -342,10 +345,7 @@ After Diff: Current Balance - After Balance
         }
       }
 
-      // reclaimAusd[name] = reclaimAusd[name] > all[name] ? all[name] : reclaimAusd[name]
-
       console.log('Address:', name)
-      console.log('Error mint aUSD on Account:', formatBalance(all[name]))
       table(
         Object.values(free)
           .filter((x) => x.now || x.before || x.after)
@@ -358,27 +358,5 @@ After Diff: Current Balance - After Balance
             'After Diff': formatBalance((now ?? 0n) - BigInt(after ?? 0n), token.decimals),
           }))
       )
-      console.log()
     }
-
-    table(
-      Object.entries(all)
-        .map(([who]) => ({
-          who,
-          'Error Mint aUSD On Account': formatBalance(reclaimAusd[who]),
-        }))
-        .concat([
-          {
-            who: 'Total',
-            'Error Mint aUSD On Account': formatBalance(Object.values(reclaimAusd).reduce((a, b) => a + (b ?? 0n), 0n)),
-          },
-        ])
-    )
-
-    const honzonTreasury = '23M5ttkmR6KcnvsNJdmYTpLo9xfc54g8uCk55buDfiJPon69'
-    const honzonTreasuryAmount = (
-      await api.query.tokens.accounts(honzonTreasury, stableCurrency.toChainData())
-    ).free.toBigInt()
-
-    console.log('HonzonTreasuryAmount', honzonTreasury, formatBalance(honzonTreasuryAmount, stableCurrency.decimals))
   })
