@@ -1,7 +1,10 @@
 import { readFileSync } from 'fs'
 
 import '@acala-network/types'
-import { AcalaPrimitivesTradingPair } from '@acala-network/types/interfaces/types-lookup'
+import {
+  AcalaPrimitivesCurrencyCurrencyId,
+  AcalaPrimitivesTradingPair,
+} from '@acala-network/types/interfaces/types-lookup'
 
 import { FixedPointNumber } from '@acala-network/sdk-core'
 import { Wallet } from '@acala-network/sdk/wallet'
@@ -61,9 +64,6 @@ After Diff: Current Balance - After Balance
 
     for (const [who, amount] of processed) {
       all[who] -= amount
-      if (all[who] === 0n) {
-        delete all[who]
-      }
     }
 
     const beforeBlock = 1638215
@@ -169,17 +169,39 @@ After Diff: Current Balance - After Balance
             })
           )
 
-          const nativeToken = await wallet.getToken(api.consts.cdpEngine.getStableCurrencyId)
+          const nativeToken = await wallet.getToken(api.consts.currencies.getNativeCurrencyId)
           const data = [{ name: nativeToken.display, token: nativeToken, free: native.toBigInt() }]
           for (const [key, value] of tokens) {
-            const token = await wallet.getToken(key.args[1])
-            const name = tokenNames[JSON.stringify(key.args[1])] || token.display
+            const currencyId = key.args[1] as AcalaPrimitivesCurrencyCurrencyId
+            const token = await wallet.getToken(currencyId)
+            const name = tokenNames[JSON.stringify(currencyId)] || token.display
             const free = value.free.toBigInt()
             data.push({
               name,
               token,
               free,
             })
+
+            if (token.isDexShare) {
+              const token1 = await wallet.getToken(currencyId.asDexShare[0])
+              const token2 = await wallet.getToken(currencyId.asDexShare[1])
+              const totalShare = await apiAt.query.tokens.totalIssuance(currencyId)
+              const poolAmount = await apiAt.query.dex.liquidityPool(token.toTradingPair(api))
+              const token1Amount = (poolAmount[0].toBigInt() * free) / totalShare.toBigInt()
+              const token2Amount = (poolAmount[1].toBigInt() * free) / totalShare.toBigInt()
+
+              data.push({
+                name: token.display + ' ' + tokenNames[currencyId.asDexShare[0].toString()] || token1.display,
+                token: token1,
+                free: token1Amount,
+              })
+
+              data.push({
+                name: token.display + ' ' + tokenNames[currencyId.asDexShare[1].toString()] || token2.display,
+                token: token2,
+                free: token2Amount,
+              })
+            }
           }
           for (const { currency, rate } of collaterals) {
             const pos = await apiAt.query.loans.positions(currency, address)
