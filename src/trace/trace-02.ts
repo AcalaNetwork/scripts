@@ -4,7 +4,7 @@ import '@acala-network/types'
 import { AcalaPrimitivesTradingPair } from '@acala-network/types/interfaces/types-lookup'
 
 import { FixedPointNumber } from '@acala-network/sdk-core'
-import { WalletPromise } from '@acala-network/sdk-wallet'
+import { Wallet } from '@acala-network/sdk/wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
 
 import { formatBalance, table } from '../log'
@@ -61,12 +61,15 @@ After Diff: Current Balance - After Balance
 
     for (const [who, amount] of processed) {
       all[who] -= amount
+      if (all[who] === 0n) {
+        delete all[who]
+      }
     }
 
     const beforeBlock = 1638215
     const afterBlock = 1639493
 
-    const wallet = new WalletPromise(api)
+    const wallet = new Wallet(api)
 
     const tokenNames = {
       '{"token":"ACA"}': 'ACA',
@@ -85,7 +88,7 @@ After Diff: Current Balance - After Balance
       '{"dexShare":[{"token":"DOT"},{"liquidCrowdloan":13}]}': 'DOT/LCDOT',
     } as Record<string, string>
 
-    const stableCurrency = wallet.getToken(api.consts.cdpEngine.getStableCurrencyId)
+    const stableCurrency = await wallet.getToken(api.consts.cdpEngine.getStableCurrencyId)
 
     const queryData = async (block: number, addresses: string[]) => {
       const apiAt = await api.at(await api.rpc.chain.getBlockHash(block))
@@ -166,15 +169,16 @@ After Diff: Current Balance - After Balance
             })
           )
 
-          const nativeToken = wallet.getNativeToken()
-          const data = [{ name: nativeToken.display, token: wallet.getNativeToken(), free: native.toBigInt() }]
+          const nativeToken = await wallet.getToken(api.consts.cdpEngine.getStableCurrencyId)
+          const data = [{ name: nativeToken.display, token: nativeToken, free: native.toBigInt() }]
           for (const [key, value] of tokens) {
-            const token = wallet.getToken(key.args[1])
+            const token = await wallet.getToken(key.args[1])
             const name = tokenNames[JSON.stringify(key.args[1])] || token.display
+            const free = value.free.toBigInt()
             data.push({
               name,
               token,
-              free: value.free.toBigInt(),
+              free,
             })
           }
           for (const { currency, rate } of collaterals) {
@@ -190,7 +194,7 @@ After Diff: Current Balance - After Balance
             }
             data.push({
               name: 'Collateral ' + (tokenNames[currency.toString()] || currency.toString()),
-              token: wallet.getToken(currency),
+              token: await wallet.getToken(currency),
               free: pos.collateral.toBigInt(),
             })
           }
@@ -198,12 +202,32 @@ After Diff: Current Balance - After Balance
           for (const pool of rewardPools) {
             if (pool.pool.isDex) {
               const reward = await apiAt.query.rewards.sharesAndWithdrawnRewards(pool.pool, address)
+              const share = reward[0].toBigInt()
               const poolCurrencyId = pool.pool.asDex
-              const token = wallet.getToken(poolCurrencyId)
+              const token = await wallet.getToken(poolCurrencyId)
               data.push({
-                name: 'Reward ' + (tokenNames[poolCurrencyId.toString()] || poolCurrencyId.toString()),
+                name: tokenNames[poolCurrencyId.toString()] || poolCurrencyId.toString(),
                 token,
-                free: reward[0].toBigInt(),
+                free: share,
+              })
+
+              const token1 = await wallet.getToken(poolCurrencyId.asDexShare[0])
+              const token2 = await wallet.getToken(poolCurrencyId.asDexShare[1])
+              const totalShare = await apiAt.query.tokens.totalIssuance(poolCurrencyId)
+              const poolAmount = await apiAt.query.dex.liquidityPool(token.toTradingPair(api))
+              const token1Amount = (poolAmount[0].toBigInt() * share) / totalShare.toBigInt()
+              const token2Amount = (poolAmount[1].toBigInt() * share) / totalShare.toBigInt()
+
+              data.push({
+                name: token.display + ' ' + tokenNames[poolCurrencyId.asDexShare[0].toString()] || token1.display,
+                token: token1,
+                free: token1Amount,
+              })
+
+              data.push({
+                name: token.display + ' ' + tokenNames[poolCurrencyId.asDexShare[1].toString()] || token2.display,
+                token: token2,
+                free: token2Amount,
               })
             }
           }
@@ -213,7 +237,7 @@ After Diff: Current Balance - After Balance
             const lpToken = apiAt.registry.createType('AcalaPrimitivesCurrencyCurrencyId', {
               dexShare: [pair[0].toJSON(), pair[1].toJSON()],
             })
-            const token = wallet.getToken(lpToken)
+            const token = await wallet.getToken(lpToken)
             data.push({
               name: tokenNames[lpToken.toString()] || token.display,
               token,
@@ -222,19 +246,19 @@ After Diff: Current Balance - After Balance
 
             const pool = poolData[pair.toString()]
 
-            const token1 = wallet.getToken(pair[0])
-            const token2 = wallet.getToken(pair[1])
+            const token1 = await wallet.getToken(pair[0])
+            const token2 = await wallet.getToken(pair[1])
             const token1Amount = (shareAmount * 10n ** 18n) / 2n / pool.initalRate[0]
             const token2Amount = (shareAmount * 10n ** 18n) / 2n / pool.initalRate[1]
 
             data.push({
-              name: 'LP ' + tokenNames[pair[0].toString()] || token1.display,
+              name: token.display + ' ' + tokenNames[pair[0].toString()] || token1.display,
               token: token1,
               free: token1Amount,
             })
 
             data.push({
-              name: 'LP ' + tokenNames[pair[1].toString()] || token2.display,
+              name: token.display + ' ' + tokenNames[pair[1].toString()] || token2.display,
               token: token2,
               free: token2Amount,
             })
@@ -242,7 +266,7 @@ After Diff: Current Balance - After Balance
 
           return {
             name: address,
-            data,
+            data: data.filter((x) => x.free !== 0n),
           }
         })
       )
@@ -251,9 +275,11 @@ After Diff: Current Balance - After Balance
     const blockNow = (await apiAt.query.system.number()).toNumber()
 
     const addresses = Object.keys(all)
-    const dataBefore = await queryData(beforeBlock, addresses)
-    const dataAfter = await queryData(afterBlock, addresses)
-    const dataNow = await queryData(blockNow, addresses)
+    const [dataBefore, dataAfter, dataNow] = await Promise.all([
+      queryData(beforeBlock, addresses),
+      queryData(afterBlock, addresses),
+      queryData(blockNow, addresses),
+    ])
 
     const reclaimAusd = {} as Record<string, bigint>
 
@@ -267,28 +293,34 @@ After Diff: Current Balance - After Balance
         if (!free[name]) {
           free[name] = { name, token }
         }
+
+        console.assert(free[name].now === undefined)
         free[name].now = f
       }
       for (const { name, token, free: f } of beofre.data) {
         if (!free[name]) {
           free[name] = { name, token }
         }
+
+        console.assert(free[name].before === undefined)
         free[name].before = f
       }
       for (const { name, token, free: f } of after.data) {
         if (!free[name]) {
           free[name] = { name, token }
         }
+
+        console.assert(free[name].after === undefined)
         free[name].after = f
       }
 
       for (const { name: token, now } of Object.values(free)) {
-        if (token === 'AUSD') {
+        if (token === 'LP aUSD-IBTC AUSD') {
           reclaimAusd[name] = (reclaimAusd[name] || 0n) + BigInt(now || 0n)
         }
       }
 
-      reclaimAusd[name] = reclaimAusd[name] > all[name] ? all[name] : reclaimAusd[name]
+      // reclaimAusd[name] = reclaimAusd[name] > all[name] ? all[name] : reclaimAusd[name]
 
       console.log('Address:', name)
       console.log('Error mint aUSD on Account:', formatBalance(all[name]))
@@ -307,24 +339,19 @@ After Diff: Current Balance - After Balance
       console.log()
     }
 
-    // table(
-    //   Object.entries(all)
-    //     .map(([who]) => ({
-    //       who,
-    //       'Error Mint aUSD On Account': formatBalance(reclaimAusd[who]),
-    //     }))
-    //     .concat([
-    //       {
-    //         who: 'Total',
-    //         'Error Mint aUSD On Account': formatBalance(Object.values(reclaimAusd).reduce((a, b) => a + b, 0n)),
-    //       },
-    //     ])
-    // )
-
-    const rewardPool = '23M5ttkmR6Kco7bReRDve6bQUSAcwqebatp3fWGJYb4hDSDJ'
-    const reawrdPoolAmount = (await api.query.tokens.accounts(rewardPool, stableCurrency.toChainData())).free.toBigInt()
-
-    console.log('ReawrdPoolAmount', rewardPool, formatBalance(reawrdPoolAmount, stableCurrency.decimals))
+    table(
+      Object.entries(all)
+        .map(([who]) => ({
+          who,
+          'Error Mint aUSD On Account': formatBalance(reclaimAusd[who]),
+        }))
+        .concat([
+          {
+            who: 'Total',
+            'Error Mint aUSD On Account': formatBalance(Object.values(reclaimAusd).reduce((a, b) => a + (b ?? 0n), 0n)),
+          },
+        ])
+    )
 
     const honzonTreasury = '23M5ttkmR6KcnvsNJdmYTpLo9xfc54g8uCk55buDfiJPon69'
     const honzonTreasuryAmount = (

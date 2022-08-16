@@ -58,17 +58,17 @@ export const formatBalance = (x: number | BN | string | FixedPointNumber | bigin
     n = +x.toString() / 10 ** decimal
   }
 
-  // if (config.output === 'console') {
-  //   if (n > 1e9) {
-  //     return `${formatDecimal(n / 1e9, 2)}B`
-  //   }
-  //   if (n > 1e6) {
-  //     return `${formatDecimal(n / 1e6, 2)}M`
-  //   }
-  //   if (n > 1e3) {
-  //     return `${formatDecimal(n / 1e3, 2)}K`
-  //   }
-  // }
+  if (config.output === 'console') {
+    if (n > 1e9) {
+      return `${formatDecimal(n / 1e9, 2)}B`
+    }
+    if (n > 1e6) {
+      return `${formatDecimal(n / 1e6, 2)}M`
+    }
+    if (n > 1e3) {
+      return `${formatDecimal(n / 1e3, 2)}K`
+    }
+  }
 
   return formatDecimal(n).toString()
 }
