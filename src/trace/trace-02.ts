@@ -19,7 +19,6 @@ runner()
   .withApiPromise()
   .run(async ({ api, apiAt }) => {
     console.log(`
-Error Mint aUSD On Account: min(Current Balance, Total Claim)
 Current Balance: Balance when running this script
 Before Balance: Balance before the incident #1638215
 After Balance: Balance after the pause #1639493
