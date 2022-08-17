@@ -6,7 +6,7 @@ import {
   AcalaPrimitivesTradingPair,
 } from '@acala-network/types/interfaces/types-lookup'
 
-import { FixedPointNumber } from '@acala-network/sdk-core'
+import { FixedPointNumber, Token } from '@acala-network/sdk-core'
 import { Wallet } from '@acala-network/sdk/wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
 
@@ -306,7 +306,7 @@ After Diff: Current Balance - After Balance
       queryData(blockNow, addresses),
     ])
 
-    const reclaimAusd = {} as Record<string, bigint>
+    const total = {} as Record<string, { value: bigint; token: Token }>
 
     for (let i = 0; i < addresses.length; i++) {
       const name = addresses[i]
@@ -339,9 +339,58 @@ After Diff: Current Balance - After Balance
         free[name].after = f
       }
 
-      for (const { name: token, now } of Object.values(free)) {
-        if (token === 'LP aUSD-IBTC AUSD') {
-          reclaimAusd[name] = (reclaimAusd[name] || 0n) + BigInt(now || 0n)
+      for (const { name: tokenName, token, now, before } of Object.values(free)) {
+        const beforeDiff = (now ?? 0n) - BigInt(before ?? 0n)
+        if (beforeDiff < 0n) {
+          continue
+        }
+        if (tokenName === 'ACA' || tokenName === 'Collateral ACA') {
+          if (!total['ACA']) {
+            total['ACA'] = { value: 0n, token }
+          }
+          total['ACA'].value += beforeDiff
+        }
+        if (tokenName === 'LDOT' || tokenName === 'Collateral LDOT') {
+          if (!total['LDOT']) {
+            total['LDOT'] = { value: 0n, token }
+          }
+          total['LDOT'].value += beforeDiff
+        }
+        if (tokenName === 'INTR' || tokenName === 'Collateral INTR') {
+          if (!total['INTR']) {
+            total['INTR'] = { value: 0n, token }
+          }
+          total['INTR'].value += beforeDiff
+        }
+        if (tokenName === 'DOT' || tokenName === 'Collateral DOT') {
+          if (!total['DOT']) {
+            total['DOT'] = { value: 0n, token }
+          }
+          total['DOT'].value += beforeDiff
+        }
+        if (tokenName === 'iBTC') {
+          if (!total['iBTC']) {
+            total['iBTC'] = { value: 0n, token }
+          }
+          total['iBTC'].value += beforeDiff
+        }
+        if (tokenName === 'LP aUSD-IBTC iBTC') {
+          if (!total['LP aUSD-IBTC iBTC']) {
+            total['LP aUSD-IBTC iBTC'] = { value: 0n, token }
+          }
+          total['LP aUSD-IBTC iBTC'].value += beforeDiff
+        }
+        if (tokenName === 'LP aUSD-IBTC AUSD') {
+          if (!total['LP aUSD-IBTC AUSD']) {
+            total['LP aUSD-IBTC AUSD'] = { value: 0n, token }
+          }
+          total['LP aUSD-IBTC AUSD'].value += beforeDiff
+        }
+        if (tokenName.startsWith('Debit')) {
+          if (!total['Debit']) {
+            total['Debit'] = { value: 0n, token }
+          }
+          total['Debit'].value += beforeDiff
         }
       }
 
@@ -358,5 +407,13 @@ After Diff: Current Balance - After Balance
             'After Diff': formatBalance((now ?? 0n) - BigInt(after ?? 0n), token.decimals),
           }))
       )
+      console.log()
     }
+
+    console.log('Total')
+    table(
+      Object.fromEntries(
+        Object.entries(total).map(([type, val]) => [type, formatBalance(val.value, val.token.decimals)])
+      )
+    )
   })
