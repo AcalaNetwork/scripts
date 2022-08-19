@@ -38,6 +38,7 @@
     "@acala-network/sdk-wallet": "^4.1.6-29",
     "@acala-network/types": "^4.1.6-29",
     "@fast-csv/format": "^4.3.5",
+    "@fast-csv/parse": "^4.3.6",
     "@open-web3/util": "^2.0.1",
     "@polkadot/api": "^9.1.1",
     "async": "^3.2.4",

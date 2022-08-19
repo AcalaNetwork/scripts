@@ -8,6 +8,10 @@ import BN from 'bn.js'
 
 import { config } from './runner'
 
+let defaultPrecision = 3
+
+export const setDefaultPrecision = (precision: number) => (defaultPrecision = precision)
+
 export const logFormat = (x: any): any => {
   if (x == null) {
     return x
@@ -45,7 +49,11 @@ export const formatDecimal = (x: number | BN | string | FixedPointNumber, length
   return Math.round(n * 10 ** length) / 10 ** length
 }
 
-export const formatBalance = (x: number | BN | string | FixedPointNumber | bigint | undefined | null, decimal = 12) => {
+export const formatBalance = (
+  x: number | BN | string | FixedPointNumber | bigint | undefined | null,
+  decimal = 12,
+  precision = defaultPrecision
+) => {
   let n
   if (x == null) {
     return '-'
@@ -60,17 +68,17 @@ export const formatBalance = (x: number | BN | string | FixedPointNumber | bigin
 
   if (config.output === 'console') {
     if (n > 1e9) {
-      return `${formatDecimal(n / 1e9, 2)}B`
+      return `${formatDecimal(n / 1e9, precision)}B`
     }
     if (n > 1e6) {
-      return `${formatDecimal(n / 1e6, 2)}M`
+      return `${formatDecimal(n / 1e6, precision)}M`
     }
     if (n > 1e3) {
-      return `${formatDecimal(n / 1e3, 2)}K`
+      return `${formatDecimal(n / 1e3, precision)}K`
     }
   }
 
-  return formatDecimal(n).toString()
+  return formatDecimal(n, precision).toString()
 }
 
 export const table = (data: any) => {
