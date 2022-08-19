@@ -1,2 +1,5 @@
 - `yarn ts-node src/trace/query-events.ts > src/trace/claim-rewards-events.json`
 - `yarn ts-node src/trace/trace-01.ts`
+- `yarn ts-node src/trace/trace-02.ts`
+- `yarn ts-node src/scripts/top-holders.ts --output=csv | tail -n +4 > src/trace/ausd.csv`
+- `yarn ts-node src/trace/trace-03.ts`
