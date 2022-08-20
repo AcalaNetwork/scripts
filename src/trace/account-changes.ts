@@ -148,7 +148,7 @@ runner()
         processResult(result1, 'in'),
         processResult(result2, 'out'),
         processResult(result3, 'in', '', 'who'),
-        processResult(result4, 'in', 'who', ''),
+        processResult(result4, 'out', 'who', ''),
         processResult(result5, 'in'),
         processResult(result6, 'out'),
       ])
