@@ -58,6 +58,11 @@ export const formatBalance = (
   if (x == null) {
     return '-'
   }
+
+  if (config.output === 'csv') {
+    return x.toString()
+  }
+
   if (x instanceof FixedPointNumber) {
     n = x.toNumber()
   } else if (typeof x === 'number') {
@@ -66,16 +71,14 @@ export const formatBalance = (
     n = +x.toString() / 10 ** decimal
   }
 
-  if (config.output === 'console') {
-    if (n > 1e9) {
-      return `${formatDecimal(n / 1e9, precision)}B`
-    }
-    if (n > 1e6) {
-      return `${formatDecimal(n / 1e6, precision)}M`
-    }
-    if (n > 1e3) {
-      return `${formatDecimal(n / 1e3, precision)}K`
-    }
+  if (n > 1e9) {
+    return `${formatDecimal(n / 1e9, precision)}B`
+  }
+  if (n > 1e6) {
+    return `${formatDecimal(n / 1e6, precision)}M`
+  }
+  if (n > 1e3) {
+    return `${formatDecimal(n / 1e3, precision)}K`
   }
 
   return formatDecimal(n, precision).toString()

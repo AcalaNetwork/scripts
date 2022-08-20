@@ -144,12 +144,14 @@ runner()
         }),
       ])
 
-      const events1 = await processResult(result1, 'in')
-      const events2 = await processResult(result2, 'out')
-      const events3 = await processResult(result3, 'in', '', 'who')
-      const events4 = await processResult(result4, 'in', 'who', '')
-      const events5 = await processResult(result5, 'in')
-      const events6 = await processResult(result6, 'out')
+      const [events1, events2, events3, events4, events5, events6] = await Promise.all([
+        processResult(result1, 'in'),
+        processResult(result2, 'out'),
+        processResult(result3, 'in', '', 'who'),
+        processResult(result4, 'in', 'who', ''),
+        processResult(result5, 'in'),
+        processResult(result6, 'out'),
+      ])
 
       const allEvents = events1.concat(events2).concat(events3).concat(events4).concat(events5).concat(events6)
       allEvents.sort((a, b) => a.height - b.height)
@@ -178,6 +180,7 @@ runner()
       }
       const xcmSum = {} as Record<string, { token: Token; value: bigint }>
       const transferSum = {} as Record<string, { token: Token; value: bigint }>
+      const cdpSum = {} as Record<string, { token: Token; value: bigint }>
       for (const evt of allEvents) {
         const currencyName = evt.currencyId.display
         switch (evt.call) {
@@ -194,7 +197,12 @@ runner()
             break
           case 'Honzon.adjust_loan_by_debit_value':
           case 'Honzon.adjust_loan':
-            sum.debt += BigInt(evt.amount) * (evt.kind === 'in' ? -1n : 1n)
+            if (evt.currencyId.display === 'aUSD') {
+              sum.debt += BigInt(evt.amount) * (evt.kind === 'in' ? -1n : 1n)
+            } else {
+              cdpSum[currencyName] = cdpSum[currencyName] || { token: evt.currencyId, value: 0n }
+              cdpSum[currencyName].value += BigInt(evt.amount) * (evt.kind === 'in' ? -1n : 1n)
+            }
             break
           case 'Currencies.transfer':
           case 'Balances.transfer':
@@ -214,9 +222,13 @@ runner()
         finalSum[k] = finalSum[k] || { token: v.token, value: 0n }
         finalSum[k].value += v.value
       }
-      finalSum['AUSD'] = finalSum['AUSD'] || { token: { decimals: 12, display: 'AUSD' }, value: 0n }
-      finalSum['AUSD'].value += sum.claim
-      finalSum['AUSD'].value += sum.debt
+      for (const [k, v] of Object.entries(cdpSum)) {
+        finalSum[k] = finalSum[k] || { token: v.token, value: 0n }
+        finalSum[k].value += v.value
+      }
+      finalSum['aUSD'] = finalSum['aUSD'] || { token: { decimals: 12, display: 'aUSD' }, value: 0n }
+      finalSum['aUSD'].value += sum.claim
+      finalSum['aUSD'].value += sum.debt
 
       console.log('xcm diff')
       table(Object.entries(xcmSum).map(([k, v]) => ({ currency: k, amount: formatBalance(v.value, v.token.decimals) })))
@@ -224,6 +236,8 @@ runner()
       table(
         Object.entries(transferSum).map(([k, v]) => ({ currency: k, amount: formatBalance(v.value, v.token.decimals) }))
       )
+      console.log('cdp diff')
+      table(Object.entries(cdpSum).map(([k, v]) => ({ currency: k, amount: formatBalance(v.value, v.token.decimals) })))
       table(Object.entries(sum).map(([k, v]) => ({ currency: k, amount: formatBalance(v) })))
       console.log('final diff')
       table(
