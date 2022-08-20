@@ -181,9 +181,14 @@ runner()
       const xcmSum = {} as Record<string, { token: Token; value: bigint }>
       const transferSum = {} as Record<string, { token: Token; value: bigint }>
       const cdpSum = {} as Record<string, { token: Token; value: bigint }>
+      const claimDexLpSum = {} as Record<string, { token: Token; value: bigint }>
       for (const evt of allEvents) {
         const currencyName = evt.currencyId.display
         switch (evt.call) {
+          case 'Dex.claim_dex_share':
+            claimDexLpSum[currencyName] = claimDexLpSum[currencyName] || { token: evt.currencyId, value: 0n }
+            claimDexLpSum[currencyName].value += BigInt(evt.amount)
+            break
           case 'Incentives.claim_rewards':
             sum.claim += BigInt(evt.amount)
             break
@@ -238,6 +243,13 @@ runner()
       )
       console.log('cdp diff')
       table(Object.entries(cdpSum).map(([k, v]) => ({ currency: k, amount: formatBalance(v.value, v.token.decimals) })))
+      console.log('claim dex lp diff')
+      table(
+        Object.entries(claimDexLpSum).map(([k, v]) => ({
+          currency: k,
+          amount: formatBalance(v.value, v.token.decimals),
+        }))
+      )
       table(Object.entries(sum).map(([k, v]) => ({ currency: k, amount: formatBalance(v) })))
       console.log('final diff')
       table(
