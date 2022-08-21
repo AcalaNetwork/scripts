@@ -11,7 +11,6 @@ import yargs from 'yargs'
 
 export const config = {
   network: '',
-  output: 'console',
 }
 
 class Context<Api, ApiAt> {
@@ -187,8 +186,6 @@ export class Runner<Api extends AnyApi, ApiType extends ApiTypes, ApiAt> {
 
   async #run(fn: (c: Context<Api, ApiAt>) => Promise<any> | void) {
     const argv = yargs.argv as any
-
-    config.output = argv.output || 'console'
 
     let atList: Array<number | string | undefined>
 
