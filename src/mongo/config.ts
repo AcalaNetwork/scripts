@@ -11,11 +11,11 @@ export const tokens = {
   },
   '{"DexShare":[{"Token":"AUSD"},{"ForeignAsset":3}]}': {
     decimals: 12,
-    price: calcDexSharePrice(133779256694784484n, 11179554822080479n, 149418353799999999n, 12n),
+    price: calcDexSharePrice(74709176900000000n, 288379511n, 149418353799999999n, 12n),
   },
   '{"DexShare":[{"Token":"AUSD"},{"ForeignAsset":4}]}': {
     decimals: 12,
-    price: calcDexSharePrice(74709176900000000n, 288379511n, 243821296627833529n, 12n),
+    price: calcDexSharePrice(1162765061520352282n, 1697757504904459n, 243821296627833529n, 12n),
   },
   '{"DexShare":[{"Token":"AUSD"},{"LiquidCrowdloan":13}]}': {
     decimals: 12,

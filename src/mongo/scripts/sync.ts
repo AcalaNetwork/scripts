@@ -11,7 +11,7 @@ const main = async () => {
   try {
     let meta = await Meta.findOne({})
     if (!meta) {
-      meta = await Meta.create({ block: 1638215, traceBlock: 1638215 })
+      meta = await Meta.create({})
     }
 
     const latestBlock = await getLatestBlockHeight()
@@ -123,6 +123,11 @@ const createTrace = async (evt: Event) => {
 
   return Trace.create({
     _id: evt._id,
+    height: evt.height,
+    blockHash: evt.blockHash,
+    extrinsicHash: evt.extrinsicHash,
+    call: evt.call,
+    event: evt.event,
     amount: evt.amount,
     currencyId: evt.currencyId,
     from,
@@ -195,6 +200,7 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
     case 'TransactionPayment.with_fee_path':
     case 'TransactionPayment.with_fee_currency':
     case 'Multisig.as_multi':
+    case 'Multisig.approve_as_multi':
       category = 'nested'
       break
     case 'CdpEngine.liquidate':
