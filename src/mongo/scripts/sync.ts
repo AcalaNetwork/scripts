@@ -2,11 +2,10 @@ import * as config from '../config'
 import { AccountTrace, Event, Meta, Trace } from '../models'
 import { decodeAddress } from '@polkadot/util-crypto'
 import { getLatestBlockHeight, queryEvents } from '../query'
-import mongoose, { ClientSession } from 'mongoose'
+import mongoose from 'mongoose'
 
 const main = async () => {
   const db = await mongoose.connect(config.mongodbUrl)
-  const session = await db.startSession()
 
   try {
     let meta = await Meta.findOne({})
@@ -16,17 +15,16 @@ const main = async () => {
 
     const latestBlock = await getLatestBlockHeight()
 
-    await syncBlock(session, meta.block, latestBlock)
-    await syncTrace(session, meta.traceBlock, latestBlock)
+    await syncBlock(meta.block, latestBlock)
+    await syncTrace(meta.traceBlock, latestBlock)
   } catch (e) {
     console.error(e)
   } finally {
-    await session.endSession()
     await db.disconnect()
   }
 }
 
-const syncBlock = async (session: ClientSession, fromBlock: number, toBlock: number): Promise<any> => {
+const syncBlock = async (fromBlock: number, toBlock: number): Promise<any> => {
   const maxBlocks = 1000
   const endBlock = Math.min(fromBlock + maxBlocks, toBlock)
 
@@ -70,15 +68,13 @@ const syncBlock = async (session: ClientSession, fromBlock: number, toBlock: num
     return true
   })
 
-  await session.withTransaction(async () => {
-    await Event.insertMany(res)
-    await Meta.updateOne({}, { block: endBlock })
-  })
+  await Event.insertMany(res)
+  await Meta.updateOne({}, { block: endBlock })
 
   console.log(`Inserted ${res.length} events`)
 
   if (endBlock < toBlock) {
-    return syncBlock(session, endBlock, toBlock)
+    return syncBlock(endBlock, toBlock)
   }
 }
 
@@ -258,26 +254,24 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
   }
 }
 
-const syncTrace = async (session: ClientSession, fromBlock: number, toBlock: number): Promise<any> => {
+const syncTrace = async (fromBlock: number, toBlock: number): Promise<any> => {
   const maxBlocks = 1000
   const endBlock = Math.min(fromBlock + maxBlocks, toBlock)
 
   console.log(`Updating trace from block ${fromBlock} to ${endBlock}`)
 
-  await session.withTransaction(async () => {
-    const events = await Event.find({ height: { $gte: fromBlock, $lt: endBlock } })
-    for (const evt of events) {
-      const trace = await createTrace(evt)
-      if (trace) {
-        await createAccountTrace(evt, trace)
-      }
+  const events = await Event.find({ height: { $gte: fromBlock, $lt: endBlock } })
+  for (const evt of events) {
+    const trace = await createTrace(evt)
+    if (trace) {
+      await createAccountTrace(evt, trace)
     }
+  }
 
-    await Meta.updateOne({}, { traceBlock: endBlock })
-  })
+  await Meta.updateOne({}, { traceBlock: endBlock })
 
   if (endBlock < toBlock) {
-    return syncTrace(session, endBlock, toBlock)
+    return syncTrace(endBlock, toBlock)
   }
 }
 

@@ -3,7 +3,7 @@ import { Decimal128, Schema, model } from 'mongoose'
 export interface Meta {
   block: number
   traceBlock: number
-  extrinsicTraceBlock: number
+  accountBalanceTraceBlock: number
 }
 
 export const metaSchema = new Schema<Meta>({
@@ -15,7 +15,7 @@ export const metaSchema = new Schema<Meta>({
     type: Number,
     default: 1638215,
   },
-  extrinsicTraceBlock: {
+  accountBalanceTraceBlock: {
     type: Number,
     default: 1638215,
   },
@@ -115,8 +115,8 @@ export const accountTraceSchema = new Schema<AccountTrace>({
 
 export const AccountTrace = model('AccountTrace', accountTraceSchema)
 
-export interface ExtrinsicTrace {
-  eventId: string
+export interface AccountBalanceTrace {
+  _id: string // event id
   height: number
   blockHash: string
   extrinsicHash?: string
@@ -129,8 +129,8 @@ export interface ExtrinsicTrace {
   value: number
 }
 
-export const extrinsicTraceSchema = new Schema<ExtrinsicTrace>({
-  eventId: String,
+export const AccountBalanceTraceSchema = new Schema<AccountBalanceTrace>({
+  _id: String,
   height: Number,
   blockHash: String,
   extrinsicHash: String,
@@ -143,7 +143,7 @@ export const extrinsicTraceSchema = new Schema<ExtrinsicTrace>({
   value: Number,
 })
 
-export const ExtrinsicTrace = model('ExtrinsicTrace', extrinsicTraceSchema)
+export const AccountBalanceTrace = model('AccountBalanceTrace', AccountBalanceTraceSchema)
 
 export interface AccountBalance {
   _id: string // address
@@ -156,3 +156,21 @@ export const accountBalanceSchema = new Schema<AccountBalance>({
 })
 
 export const AccountBalance = model('AccountBalance', accountBalanceSchema)
+
+export interface AccountBlockTrace {
+  _id: string // address + block hash
+  height: number
+  blockHash: string
+  account: string
+  value: number
+}
+
+export const accountBlockTraceSchema = new Schema<AccountBlockTrace>({
+  _id: String,
+  height: Number,
+  blockHash: String,
+  account: String,
+  value: Number,
+})
+
+export const AccountBlockTrace = model('AccountBlockTrace', accountBlockTraceSchema)
