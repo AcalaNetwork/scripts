@@ -1,7 +1,7 @@
 import * as config from '../config'
-import { AccountTrace, Event, Meta, Trace } from '../models'
+import { AccountTrace, Event, LoansEvent, Meta, Trace } from '../models'
 import { decodeAddress } from '@polkadot/util-crypto'
-import { getLatestBlockHeight, queryEvents } from '../query'
+import { queryEvents, queryLoansEvents } from '../query'
 import mongoose from 'mongoose'
 
 const main = async () => {
@@ -13,10 +13,10 @@ const main = async () => {
       meta = await Meta.create({})
     }
 
-    const latestBlock = await getLatestBlockHeight()
+    const latestBlock = 1696000 // await getLatestBlockHeight()
 
     await syncBlock(meta.block, latestBlock)
-    await syncTrace(meta.traceBlock, latestBlock)
+    await syncTrace()
   } catch (e) {
     console.error(e)
   } finally {
@@ -25,6 +25,9 @@ const main = async () => {
 }
 
 const syncBlock = async (fromBlock: number, toBlock: number): Promise<any> => {
+  if (fromBlock >= toBlock) {
+    return
+  }
   const maxBlocks = 1000
   const endBlock = Math.min(fromBlock + maxBlocks, toBlock)
 
@@ -69,6 +72,11 @@ const syncBlock = async (fromBlock: number, toBlock: number): Promise<any> => {
   })
 
   await Event.insertMany(res)
+
+  const loans = await queryLoansEvents(fromBlock, endBlock)
+
+  await LoansEvent.insertMany(loans)
+
   await Meta.updateOne({}, { block: endBlock })
 
   console.log(`Inserted ${res.length} events`)
@@ -219,7 +227,7 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
       console.log(`Unknown call ${evt.call}`)
   }
 
-  if (trace.from && !isSystemAccount(trace.from)) {
+  if (trace.from) {
     const account = trace.from
     await AccountTrace.create({
       _id: `${account}-${evt._id}`,
@@ -235,7 +243,7 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
       value: -trace.value,
     })
   }
-  if (trace.to && !isSystemAccount(trace.to)) {
+  if (trace.to) {
     const account = trace.to
     await AccountTrace.create({
       _id: `${account}-${evt._id}`,
@@ -254,24 +262,76 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
   }
 }
 
-const syncTrace = async (fromBlock: number, toBlock: number): Promise<any> => {
-  const maxBlocks = 1000
-  const endBlock = Math.min(fromBlock + maxBlocks, toBlock)
+const createLoanTrace = async (evt: LoansEvent) => {
+  const token = config.tokens[evt.currencyId]
+  const decimals = token?.decimals || 12
+  const price = token?.price ?? 0
+  let value = (Number(evt.collateralAmount) / 10 ** decimals) * price
+  const rate = config.debitExchangeRate[evt.currencyId] || 0
+  let debitValue = (Number(evt.debitAmount) / 10 ** 12) * rate
 
-  console.log(`Updating trace from block ${fromBlock} to ${endBlock}`)
+  let from = config.systemAddresses.loans
+  let to = evt.who
 
-  const events = await Event.find({ height: { $gte: fromBlock, $lt: endBlock } })
-  for (const evt of events) {
+  if (value < 0) {
+    value = -value
+    ;[from, to] = [to, from]
+  }
+
+  await Trace.create({
+    _id: evt._id,
+    height: evt.height,
+    blockHash: evt.blockHash,
+    extrinsicHash: evt.extrinsicHash,
+    call: evt.call,
+    event: evt.event,
+    amount: evt.collateralAmount,
+    currencyId: evt.currencyId,
+    from,
+    to,
+    value,
+  })
+
+  from = evt.who
+  to = config.systemAddresses.loans
+
+  if (debitValue < 0) {
+    debitValue = -debitValue
+    ;[from, to] = [to, from]
+  }
+
+  await Trace.create({
+    _id: evt._id + '-debit',
+    height: evt.height,
+    blockHash: evt.blockHash,
+    extrinsicHash: evt.extrinsicHash,
+    call: evt.call,
+    event: evt.event,
+    amount: Math.floor(Number(evt.debitAmount) * config.debitExchangeRate[evt.currencyId]),
+    currencyId: '{"Token":"AUSD"}',
+    from,
+    to,
+    value: debitValue,
+  })
+}
+
+const syncTrace = async (): Promise<any> => {
+  console.log('sync trace')
+  for await (const evt of Event.find()) {
+    if (evt.height % 1000 === 0) {
+      console.log(`sync trace ${evt.height}`)
+    }
     const trace = await createTrace(evt)
     if (trace) {
       await createAccountTrace(evt, trace)
     }
   }
-
-  await Meta.updateOne({}, { traceBlock: endBlock })
-
-  if (endBlock < toBlock) {
-    return syncTrace(endBlock, toBlock)
+  console.log('sync loans trace')
+  for await (const evt of await LoansEvent.find()) {
+    if (evt.height % 1000 === 0) {
+      console.log(`sync loans trace ${evt.height}`)
+    }
+    await createLoanTrace(evt)
   }
 }
 

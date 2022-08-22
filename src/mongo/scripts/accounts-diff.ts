@@ -5,7 +5,7 @@ import {
   AcalaPrimitivesCurrencyCurrencyId,
   AcalaPrimitivesTradingPair,
 } from '@acala-network/types/interfaces/types-lookup'
-import { AccountTrace, Meta } from '../models'
+import { AccountBalance, AccountTrace } from '../models'
 import { FixedPointNumber } from '@acala-network/sdk-core'
 import { Wallet } from '@acala-network/sdk/wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
@@ -230,24 +230,13 @@ runner()
     }
 
     const beforeBlock = 1638215
-    const afterBlock = (await Meta.findOne({}))?.traceBlock || 1639493
+    const afterBlock = 1696000
 
-    const addresses = (
-      await AccountTrace.aggregate([
-        {
-          $match: {
-            value: {
-              $gt: 1,
-            },
-          },
-        },
-        {
-          $group: {
-            _id: '$account',
-          },
-        },
-      ])
-    ).map((i) => i._id) as string[]
+    const addresses = []
+
+    for await (const acc of AccountBalance.find({})) {
+      addresses.push(acc._id)
+    }
 
     const [dataBefore, dataAfter] = await Promise.all([
       queryData(beforeBlock, addresses),

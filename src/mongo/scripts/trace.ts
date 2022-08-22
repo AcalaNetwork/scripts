@@ -14,13 +14,29 @@ const main = async () => {
   }
 }
 
-const systemAddresses = {
-  cdp: '23M5ttkmR6KcoCvrNZsA97DQMPxQmqktF8DHYZSDW4HLcEDw',
-  homa: '23M5ttkmR6Kco5pqN691bGfU3BhfU6QPG9arw6SR1XpNuQqu',
+const isExitAddr = (addr: string) => {
+  const exitAddresses = [
+    config.systemAddresses.loans,
+    config.systemAddresses.homa,
+
+    // moonbeam
+    '23UvQ3ZQXJ5LfTUSYkcRPkQX2FHgcKxGmqdxYJe9j5e3Lwsi',
+    // astar
+    '23UvQ3ZQvYBhhhL4C1Zsn7gfDWcWu3pWyG5boWyGufhyoPbc',
+    // cex
+    '26JqMKx4HJJcmb1kXo24HYYobiK2jURGCq6zuEzFBK3hQ9Ti',
+    '23DhqhsKDDpFnH2GreWy7Sk4dqUmGCCVPGk5Lpr84jxzBh5T',
+  ]
+  return exitAddresses.includes(addr)
 }
 
 const syncTrace = async (): Promise<any> => {
   const agg = [
+    {
+      $match: {
+        value: { $gt: 2 },
+      },
+    },
     {
       $sort: {
         _id: 1,
@@ -41,32 +57,40 @@ const syncTrace = async (): Promise<any> => {
     },
   ]
 
-  for await (const data of Trace.aggregate(agg)) {
+  for await (const data of Trace.aggregate(agg, { allowDiskUse: true })) {
     const blockHeight = data._id as number
     const traces = data.data as Trace[]
 
     const changes = {} as Record<string, number>
 
     for (const trace of traces) {
-      if (trace.value < 1) {
-        continue
-      }
-      if (trace.from === systemAddresses.cdp || trace.to === systemAddresses.cdp) {
+      if (trace.to === config.systemAddresses.homa && trace.call === 'Homa.request_redeem') {
         // ignore as this does not actually transfer value
         continue
       }
-      if (trace.to === systemAddresses.homa && trace.call === 'Homa.request_redeem') {
-        // ignore as this does not actually transfer value
+      if (trace.call === 'Dex.claim_dex_share') {
         continue
+      }
+      if (trace.from === config.systemAddresses.incentives || trace.to === config.systemAddresses.incentives) {
+        if (trace.currencyId.includes('DexShare')) {
+          // deposit or withdraw dex share
+          continue
+        }
       }
 
+      let from = trace.from
       let createTrace = false
-      if (trace.from) {
-        const fromAcc = await AccountBalance.findOne({ _id: trace.from })
+
+      if (trace.call === 'Dex.add_liquidity' && trace.event === 'Tokens.Deposited') {
+        from = config.systemAddresses.dex
+      }
+
+      if (from) {
+        const fromAcc = await AccountBalance.findOne({ _id: from })
         if (fromAcc) {
           createTrace = true
-          if (trace.to) {
-            changes[trace.from] = (changes[trace.from] || 0) - trace.value
+          if (trace.to && !isExitAddr(trace.to)) {
+            changes[from] = (changes[from] || 0) - trace.value
             fromAcc.value -= trace.value
             await fromAcc.save()
           }
@@ -75,9 +99,13 @@ const syncTrace = async (): Promise<any> => {
           createTrace = true
         }
       }
-      if (createTrace && trace.to) {
-        changes[trace.to] = (changes[trace.to] || 0) + trace.value
-        await AccountBalance.updateOne({ _id: trace.to }, { $inc: { value: trace.value } }, { upsert: true })
+
+      if (createTrace && trace.to && !isExitAddr(trace.to)) {
+        if (trace.to !== config.systemAddresses.cdp) {
+          changes[trace.to] = (changes[trace.to] || 0) + trace.value
+          await AccountBalance.updateOne({ _id: trace.to }, { $inc: { value: trace.value } }, { upsert: true })
+        }
+
         await AccountBalanceTrace.create({
           _id: trace._id,
           height: trace.height,
@@ -87,7 +115,7 @@ const syncTrace = async (): Promise<any> => {
           event: trace.event,
           amount: trace.amount,
           currencyId: trace.currencyId,
-          from: trace.from,
+          from,
           to: trace.to,
           value: trace.value,
         })

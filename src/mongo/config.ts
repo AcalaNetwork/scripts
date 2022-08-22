@@ -98,3 +98,18 @@ export const tokens = {
     price: ldot,
   },
 } as Record<string, { decimals: number; price: number }>
+
+export const debitExchangeRate = {
+  '{"Token":"ACA"}': 0.101189,
+  '{"Token":"LDOT"}': 0.100785,
+  '{"Token":"DOT"}': 0.101518,
+  '{"LiquidCrowdloan":13}': 0.101533,
+} as Record<string, number>
+
+export const systemAddresses = {
+  loans: '23M5ttkmR6KcoCvrNZsA97DQMPxQmqktF8DHYZSDW4HLcEDw',
+  cdp: '23M5ttkmR6KcnvsNJdmYTpLo9xfc54g8uCk55buDfiJPon69',
+  homa: '23M5ttkmR6Kco5pqN691bGfU3BhfU6QPG9arw6SR1XpNuQqu',
+  dex: '23M5ttkmR6KcnxentoqchgBdUjzMDSzFoUyf5qMs7FsmRMvV',
+  incentives: '23M5ttkmR6Kco7bReRDve6bQUSAcwqebatp3fWGJYb4hDSDJ',
+}

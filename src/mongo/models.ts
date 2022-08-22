@@ -2,20 +2,10 @@ import { Decimal128, Schema, model } from 'mongoose'
 
 export interface Meta {
   block: number
-  traceBlock: number
-  accountBalanceTraceBlock: number
 }
 
 export const metaSchema = new Schema<Meta>({
   block: {
-    type: Number,
-    default: 1638215,
-  },
-  traceBlock: {
-    type: Number,
-    default: 1638215,
-  },
-  accountBalanceTraceBlock: {
     type: Number,
     default: 1638215,
   },
@@ -52,6 +42,34 @@ export const eventSchema = new Schema<Event>({
 })
 
 export const Event = model('Event', eventSchema)
+
+export interface LoansEvent {
+  _id: string
+  height: number
+  blockHash: string
+  extrinsicHash?: string
+  call?: string
+  event: string
+  currencyId: string
+  collateralAmount: Decimal128
+  debitAmount: Decimal128
+  who: string
+}
+
+export const loansEvent = new Schema<LoansEvent>({
+  _id: String,
+  height: Number,
+  blockHash: String,
+  extrinsicHash: String,
+  call: String,
+  event: String,
+  currencyId: String,
+  collateralAmount: Schema.Types.Decimal128,
+  debitAmount: Schema.Types.Decimal128,
+  who: String,
+})
+
+export const LoansEvent = model('LoansEvent', loansEvent)
 
 export interface Trace {
   _id: string // event id
