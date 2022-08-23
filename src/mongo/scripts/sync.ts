@@ -13,7 +13,7 @@ const main = async () => {
       meta = await Meta.create({})
     }
 
-    const latestBlock = 1696000 // await getLatestBlockHeight()
+    const latestBlock = 1694500 // await getLatestBlockHeight()
 
     await syncBlock(meta.block, latestBlock)
     await syncTrace()
@@ -168,6 +168,12 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
       category = 'transfer'
       break
     case 'XTokens.transfer':
+      if (trace.value > 0) {
+        category = 'xcm-receive'
+      } else {
+        category = 'xcm-transfer'
+      }
+      break
     case 'ParachainSystem.set_validation_data':
       category = 'xcm-transfer'
       break
@@ -217,11 +223,7 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
       return
     case null:
     case undefined:
-      if (evt.extrinsicHash) {
-        category = 'ignored'
-      } else {
-        category = 'xcm-transfer'
-      }
+      category = 'ignored'
       break
     default:
       console.log(`Unknown call ${evt.call}`)

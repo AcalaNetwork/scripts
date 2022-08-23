@@ -16,7 +16,7 @@ const main = async () => {
 
 const isExitAddr = (addr: string) => {
   const exitAddresses = [
-    config.systemAddresses.loans,
+    // config.systemAddresses.loans,
     config.systemAddresses.homa,
 
     // moonbeam
@@ -26,6 +26,10 @@ const isExitAddr = (addr: string) => {
     // cex
     '26JqMKx4HJJcmb1kXo24HYYobiK2jURGCq6zuEzFBK3hQ9Ti',
     '23DhqhsKDDpFnH2GreWy7Sk4dqUmGCCVPGk5Lpr84jxzBh5T',
+    '221r454cYfBePBwyMLL5QhdijGQaXrLvqKDp5cCBtMTTXWWH',
+    '22qUkUHTKmWsMJm9UA781DNRshnig1H2J251wEbciy7yM96m',
+    '24i2G8sM8Nqki95y5AafBZoS1EjvVrKSekA93sooNJ8sDtjJ',
+    '24Vv7VS9CpRcxThp972X7sWu3Ksjyndrz7ZLnmyj1PYgVchQ',
   ]
   return exitAddresses.includes(addr)
 }

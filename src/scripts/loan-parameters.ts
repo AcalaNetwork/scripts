@@ -59,16 +59,16 @@ runner()
           totalCollateral: formatBalance(total.collateral, decimals),
           totalCollateralValue: formatBalance(collateralValue),
           capitalEfficiency: formatDecimal(debitValue.div(collateralValue)),
-          other: {
-            currency,
-            token,
-            rate,
-            price,
-            liquidationRatio: liquidationRatio.unwrapOrDefault(),
-          },
+          // other: {
+          //   currency,
+          //   token,
+          //   rate,
+          //   price,
+          //   liquidationRatio: liquidationRatio.unwrapOrDefault(),
+          // },
         }
       })
     )
 
-    table(Object.fromEntries(honzonData.map(({ currencyName, other: _, ...value }) => [currencyName, value])))
+    table(honzonData)
   })

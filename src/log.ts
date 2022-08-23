@@ -57,10 +57,10 @@ export const formatBalance = (
 ) => {
   let n
   if (x == null) {
-    return '-'
+    return ''
   }
 
-  if (output === 'csv') {
+  if (output === 'csv-raw') {
     return x.toString()
   }
 
@@ -72,14 +72,16 @@ export const formatBalance = (
     n = +x.toString() / 10 ** decimal
   }
 
-  if (Math.abs(n) > 1e9) {
-    return `${formatDecimal(n / 1e9, precision)}B`
-  }
-  if (Math.abs(n) > 1e6) {
-    return `${formatDecimal(n / 1e6, precision)}M`
-  }
-  if (Math.abs(n) > 1e3) {
-    return `${formatDecimal(n / 1e3, precision)}K`
+  if (output === 'console') {
+    if (Math.abs(n) > 1e9) {
+      return `${formatDecimal(n / 1e9, precision)}B`
+    }
+    if (Math.abs(n) > 1e6) {
+      return `${formatDecimal(n / 1e6, precision)}M`
+    }
+    if (Math.abs(n) > 1e3) {
+      return `${formatDecimal(n / 1e3, precision)}K`
+    }
   }
 
   return formatDecimal(n, precision).toString()

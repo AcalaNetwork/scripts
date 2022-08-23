@@ -5,7 +5,7 @@ import {
   AcalaPrimitivesCurrencyCurrencyId,
   AcalaPrimitivesTradingPair,
 } from '@acala-network/types/interfaces/types-lookup'
-import { AccountBalance, AccountTrace } from '../models'
+import { AccountTrace } from '../models'
 import { FixedPointNumber } from '@acala-network/sdk-core'
 import { Wallet } from '@acala-network/sdk/wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
@@ -232,11 +232,26 @@ runner()
     const beforeBlock = 1638215
     const afterBlock = 1696000
 
-    const addresses = []
+    // const addresses = []
 
-    for await (const acc of AccountBalance.find({})) {
-      addresses.push(acc._id)
-    }
+    // for await (const acc of AccountBalance.find({})) {
+    //   addresses.push(acc._id)
+    // }
+
+    const addresses = (
+      await AccountTrace.aggregate([
+        {
+          $match: {
+            $or: [{ value: { $gt: 0.5 } }, { value: { $lt: -0.5 } }],
+          },
+        },
+        {
+          $group: {
+            _id: '$account',
+          },
+        },
+      ])
+    ).map((i) => i._id) as string[]
 
     const [dataBefore, dataAfter] = await Promise.all([
       queryData(beforeBlock, addresses),
@@ -244,6 +259,7 @@ runner()
     ])
 
     const result = []
+    const keys: Set<string> = new Set()
 
     for (let i = 0; i < addresses.length; i++) {
       const name = addresses[i]
@@ -331,18 +347,33 @@ runner()
         free[name].xcmOut = -BigInt(xcmData.sum.toString())
       }
 
+      const data = {
+        account: name,
+      } as Record<string, string>
       for (const val of Object.values(free)) {
-        result.push({
-          account: name,
-          token: val.name,
-          before: formatBalance(val.before, val.token.decimals),
-          after: formatBalance(val.after, val.token.decimals),
-          xcmIn: formatBalance(val.xcmIn, val.token.decimals),
-          xcmOut: formatBalance(val.xcmOut, val.token.decimals),
-        })
+        keys.add(`${val.name} before`)
+        keys.add(`${val.name} after`)
+        keys.add(`${val.name} xcmIn`)
+        keys.add(`${val.name} xcmOut`)
+        data[`${val.name} before`] = formatBalance(val.before, val.token.decimals)
+        data[`${val.name} after`] = formatBalance(val.after, val.token.decimals)
+        data[`${val.name} xcmIn`] = formatBalance(val.xcmIn, val.token.decimals)
+        data[`${val.name} xcmOut`] = formatBalance(val.xcmOut, val.token.decimals)
+        // result.push({
+        //   account: name,
+        //   token: val.name,
+        //   before: formatBalance(val.before, val.token.decimals),
+        //   after: formatBalance(val.after, val.token.decimals),
+        //   xcmIn: formatBalance(val.xcmIn, val.token.decimals),
+        //   xcmOut: formatBalance(val.xcmOut, val.token.decimals),
+        // })
       }
+      result.push(data)
     }
 
+    for (const k of keys) {
+      result[0][k] = result[0][k] || ''
+    }
     table(result)
 
     await mongoose.disconnect()
