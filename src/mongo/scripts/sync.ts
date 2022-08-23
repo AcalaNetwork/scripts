@@ -1,6 +1,5 @@
 import * as config from '../config'
 import { AccountTrace, Event, LoansEvent, Meta, Trace } from '../models'
-import { decodeAddress } from '@polkadot/util-crypto'
 import { queryEvents, queryLoansEvents } from '../query'
 import mongoose from 'mongoose'
 
@@ -86,18 +85,17 @@ const syncBlock = async (fromBlock: number, toBlock: number): Promise<any> => {
   }
 }
 
-const isSystemAccount = (address: string) => {
-  return decodeAddress(address)
-    .slice(14)
-    .every((x) => x === 0)
-}
+// const isSystemAccount = (address: string) => {
+//   return decodeAddress(address)
+//     .slice(14)
+//     .every((x) => x === 0)
+// }
 
 const createTrace = async (evt: Event) => {
   let from = evt.from
   let to = evt.to
 
-  if (evt.who && isSystemAccount(evt.who)) {
-    // deposit/withdraw to/from system accounts are ignored
+  if (evt.who === config.systemAddresses.treasury) {
     return
   }
 
@@ -125,25 +123,28 @@ const createTrace = async (evt: Event) => {
   const price = token?.price ?? 0
   const value = (Number(evt.amount) / 10 ** decimals) * price
 
-  return Trace.create({
-    _id: evt._id,
-    height: evt.height,
-    blockHash: evt.blockHash,
-    extrinsicHash: evt.extrinsicHash,
-    call: evt.call,
-    event: evt.event,
-    amount: evt.amount,
-    currencyId: evt.currencyId,
-    from,
-    to,
-    value,
-  })
+  return Trace.findByIdAndUpdate(
+    { _id: evt._id },
+    {
+      _id: evt._id,
+      height: evt.height,
+      blockHash: evt.blockHash,
+      extrinsicHash: evt.extrinsicHash,
+      call: evt.call,
+      event: evt.event,
+      amount: evt.amount,
+      currencyId: evt.currencyId,
+      from,
+      to,
+      value,
+    },
+    { upsert: true }
+  )
 }
 
 const createAccountTrace = async (evt: Event, trace: Trace) => {
   if (
-    evt.event === 'Balances.Withdraw' &&
-    evt.currencyId === '{"Token":"ACA"}' &&
+    (evt.event === 'Balances.Withdraw' || evt.event === 'Balances.Deposit') &&
     parseFloat(evt.amount.toString()) < 5000000000
   ) {
     // this looks like for tx fee payment. ignore it. it is small anyway
@@ -168,25 +169,21 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
       category = 'transfer'
       break
     case 'XTokens.transfer':
-      if (trace.value > 0) {
-        category = 'xcm-receive'
-      } else {
-        category = 'xcm-transfer'
-      }
-      break
     case 'ParachainSystem.set_validation_data':
       category = 'xcm-transfer'
       break
-    case 'AggregatedDex.swap_with_exact_supply':
     case 'Dex.add_liquidity':
-    case 'Dex.claim_dex_share':
     case 'Dex.remove_liquidity':
-    case 'Dex.swap_with_exact_supply':
-    case 'Dex.swap_with_exact_target':
-    case 'Honzon.close_loan_has_debit_by_dex':
     case 'StableAsset.mint':
     case 'StableAsset.redeem_proportion':
     case 'StableAsset.redeem_single':
+      category = 'swap-liquidity'
+      break
+    case 'AggregatedDex.swap_with_exact_supply':
+    case 'Dex.claim_dex_share':
+    case 'Dex.swap_with_exact_supply':
+    case 'Dex.swap_with_exact_target':
+    case 'Honzon.close_loan_has_debit_by_dex':
     case 'StableAsset.swap':
       category = 'swap'
       break
@@ -223,7 +220,13 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
       return
     case null:
     case undefined:
-      category = 'ignored'
+      if (trace.from === config.systemAddresses.homaTreasury) {
+        category = 'homa-burn'
+      } else if (trace.to === config.systemAddresses.homaTreasury) {
+        category = 'homa-mint'
+      } else {
+        category = 'ignored'
+      }
       break
     default:
       console.log(`Unknown call ${evt.call}`)
@@ -231,36 +234,46 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
 
   if (trace.from) {
     const account = trace.from
-    await AccountTrace.create({
-      _id: `${account}-${evt._id}`,
-      height: evt.height,
-      blockHash: evt.blockHash,
-      extrinsicHash: evt.extrinsicHash,
-      call: evt.call,
-      account,
-      eventId: evt._id,
-      amount: mongoose.Types.Decimal128.fromString((-BigInt(evt.amount.toString())).toString()),
-      currencyId: evt.currencyId,
-      category,
-      value: -trace.value,
-    })
+    await AccountTrace.updateOne(
+      { _id: `${account}-${evt._id}` },
+      {
+        _id: `${account}-${evt._id}`,
+        height: evt.height,
+        blockHash: evt.blockHash,
+        extrinsicHash: evt.extrinsicHash,
+        call: evt.call,
+        account,
+        event: evt.event,
+        amount: mongoose.Types.Decimal128.fromString((-BigInt(evt.amount.toString())).toString()),
+        currencyId: evt.currencyId,
+        category,
+        value: -trace.value,
+      },
+      { upsert: true }
+    )
   }
   if (trace.to) {
+    if (category === 'xcm-transfer' && evt.call?.startsWith('XTokens')) {
+      category = 'xcm-receive'
+    }
     const account = trace.to
-    await AccountTrace.create({
-      _id: `${account}-${evt._id}`,
-      height: evt.height,
-      blockHash: evt.blockHash,
-      extrinsicHash: evt.extrinsicHash,
-      call: evt.call,
-      event: evt._id,
-      account,
-      eventId: evt._id,
-      amount: evt.amount,
-      currencyId: evt.currencyId,
-      category,
-      value: trace.value,
-    })
+    await AccountTrace.updateOne(
+      { _id: `${account}-${evt._id}` },
+      {
+        _id: `${account}-${evt._id}`,
+        height: evt.height,
+        blockHash: evt.blockHash,
+        extrinsicHash: evt.extrinsicHash,
+        call: evt.call,
+        account,
+        event: evt.event,
+        amount: evt.amount,
+        currencyId: evt.currencyId,
+        category,
+        value: trace.value,
+      },
+      { upsert: true }
+    )
   }
 }
 
@@ -280,19 +293,23 @@ const createLoanTrace = async (evt: LoansEvent) => {
     ;[from, to] = [to, from]
   }
 
-  await Trace.create({
-    _id: evt._id,
-    height: evt.height,
-    blockHash: evt.blockHash,
-    extrinsicHash: evt.extrinsicHash,
-    call: evt.call,
-    event: evt.event,
-    amount: evt.collateralAmount,
-    currencyId: evt.currencyId,
-    from,
-    to,
-    value,
-  })
+  await Trace.updateOne(
+    { _id: evt._id },
+    {
+      _id: evt._id,
+      height: evt.height,
+      blockHash: evt.blockHash,
+      extrinsicHash: evt.extrinsicHash,
+      call: evt.call,
+      event: evt.event,
+      amount: evt.collateralAmount,
+      currencyId: evt.currencyId,
+      from,
+      to,
+      value,
+    },
+    { upsert: true }
+  )
 
   from = evt.who
   to = config.systemAddresses.loans
@@ -302,19 +319,23 @@ const createLoanTrace = async (evt: LoansEvent) => {
     ;[from, to] = [to, from]
   }
 
-  await Trace.create({
-    _id: evt._id + '-debit',
-    height: evt.height,
-    blockHash: evt.blockHash,
-    extrinsicHash: evt.extrinsicHash,
-    call: evt.call,
-    event: evt.event,
-    amount: Math.floor(Number(evt.debitAmount) * config.debitExchangeRate[evt.currencyId]),
-    currencyId: '{"Token":"AUSD"}',
-    from,
-    to,
-    value: debitValue,
-  })
+  await Trace.updateOne(
+    { _id: evt._id + '-debit' },
+    {
+      _id: evt._id + '-debit',
+      height: evt.height,
+      blockHash: evt.blockHash,
+      extrinsicHash: evt.extrinsicHash,
+      call: evt.call,
+      event: evt.event,
+      amount: Math.floor(Number(evt.debitAmount) * config.debitExchangeRate[evt.currencyId]),
+      currencyId: '{"Token":"AUSD"}',
+      from,
+      to,
+      value: debitValue,
+    },
+    { upsert: true }
+  )
 }
 
 const syncTrace = async (): Promise<any> => {

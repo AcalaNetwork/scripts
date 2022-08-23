@@ -5,7 +5,7 @@ import {
   AcalaPrimitivesCurrencyCurrencyId,
   AcalaPrimitivesTradingPair,
 } from '@acala-network/types/interfaces/types-lookup'
-import { AccountTrace } from '../models'
+import { AccountBalance, AccountTrace } from '../models'
 import { FixedPointNumber } from '@acala-network/sdk-core'
 import { Wallet } from '@acala-network/sdk/wallet'
 import { fetchEntriesToArray } from '@open-web3/util'
@@ -232,26 +232,21 @@ runner()
     const beforeBlock = 1638215
     const afterBlock = 1696000
 
-    // const addresses = []
+    const addresses = []
 
-    // for await (const acc of AccountBalance.find({})) {
-    //   addresses.push(acc._id)
-    // }
+    for await (const acc of AccountBalance.find({})) {
+      addresses.push(acc._id)
+    }
 
-    const addresses = (
-      await AccountTrace.aggregate([
-        {
-          $match: {
-            $or: [{ value: { $gt: 0.5 } }, { value: { $lt: -0.5 } }],
-          },
-        },
-        {
-          $group: {
-            _id: '$account',
-          },
-        },
-      ])
-    ).map((i) => i._id) as string[]
+    // const addresses = (
+    //   await AccountTrace.aggregate([
+    //     {
+    //       $group: {
+    //         _id: '$account',
+    //       },
+    //     },
+    //   ])
+    // ).map((i) => i._id) as string[]
 
     const [dataBefore, dataAfter] = await Promise.all([
       queryData(beforeBlock, addresses),
@@ -266,7 +261,16 @@ runner()
       const beofre = dataBefore[i]
       const after = dataAfter[i]
       const free = {} as {
-        [key: string]: { name: string; token: any; xcmIn?: any; xcmOut?: any; before?: any; after?: any }
+        [key: string]: {
+          name: string
+          token: any
+          xcmIn?: any
+          xcmOut?: any
+          before?: any
+          after?: any
+          homa?: any
+          liquidity?: any
+        }
       }
 
       for (const { name, token, free: f } of beofre.data) {
@@ -305,7 +309,7 @@ runner()
         },
       ]
 
-      for await (const xcmData of await AccountTrace.aggregate(agg)) {
+      for await (const xcmData of AccountTrace.aggregate(agg)) {
         const currency = api.registry.createType('AcalaPrimitivesCurrencyCurrencyId', JSON.parse(xcmData._id))
         const token = await wallet.getToken(currency)
         const name = token.display
@@ -335,7 +339,7 @@ runner()
         },
       ]
 
-      for await (const xcmData of await AccountTrace.aggregate(agg2)) {
+      for await (const xcmData of AccountTrace.aggregate(agg2)) {
         const currency = api.registry.createType('AcalaPrimitivesCurrencyCurrencyId', JSON.parse(xcmData._id))
         const token = await wallet.getToken(currency)
         const name = token.display
@@ -347,18 +351,93 @@ runner()
         free[name].xcmOut = -BigInt(xcmData.sum.toString())
       }
 
+      const agg3 = [
+        {
+          $match: {
+            category: 'homa',
+            account: name,
+          },
+        },
+        {
+          $group: {
+            _id: '$currencyId',
+            sum: {
+              $sum: '$amount',
+            },
+          },
+        },
+      ]
+
+      for await (const data of AccountTrace.aggregate(agg3)) {
+        const currency = api.registry.createType('AcalaPrimitivesCurrencyCurrencyId', JSON.parse(data._id))
+        const token = await wallet.getToken(currency)
+        const name = token.display
+        if (!free[name]) {
+          free[name] = { name, token }
+        }
+
+        console.assert(free[name].homa === undefined, free[name].homa, name, data)
+        free[name].homa = BigInt(data.sum.toString())
+      }
+
+      const agg4 = [
+        {
+          $match: {
+            category: 'swap-liquidity',
+            account: name,
+          },
+        },
+        {
+          $group: {
+            _id: '$currencyId',
+            sum: {
+              $sum: '$amount',
+            },
+          },
+        },
+      ]
+
+      for await (const data of AccountTrace.aggregate(agg4)) {
+        const currency = api.registry.createType('AcalaPrimitivesCurrencyCurrencyId', JSON.parse(data._id))
+        const token = await wallet.getToken(currency)
+        const name = token.display
+        if (!free[name]) {
+          free[name] = { name, token }
+        }
+
+        console.assert(free[name].liquidity === undefined, free[name].liquidity, name, data)
+        free[name].liquidity = BigInt(data.sum.toString())
+      }
+
       const data = {
         account: name,
       } as Record<string, string>
       for (const val of Object.values(free)) {
-        keys.add(`${val.name} before`)
-        keys.add(`${val.name} after`)
-        keys.add(`${val.name} xcmIn`)
-        keys.add(`${val.name} xcmOut`)
-        data[`${val.name} before`] = formatBalance(val.before, val.token.decimals)
-        data[`${val.name} after`] = formatBalance(val.after, val.token.decimals)
-        data[`${val.name} xcmIn`] = formatBalance(val.xcmIn, val.token.decimals)
-        data[`${val.name} xcmOut`] = formatBalance(val.xcmOut, val.token.decimals)
+        if (val.before) {
+          keys.add(`${val.name} before`)
+          data[`${val.name} before`] = formatBalance(val.before, val.token.decimals)
+        }
+        if (val.after) {
+          keys.add(`${val.name} after`)
+          data[`${val.name} after`] = formatBalance(val.after, val.token.decimals)
+        }
+        if (val.xcmIn) {
+          keys.add(`${val.name} xcmIn`)
+          data[`${val.name} xcmIn`] = formatBalance(val.xcmIn, val.token.decimals)
+        }
+        if (val.xcmOut) {
+          keys.add(`${val.name} xcmOut`)
+          data[`${val.name} xcmOut`] = formatBalance(val.xcmOut, val.token.decimals)
+        }
+        if (val.homa) {
+          keys.add(`${val.name} homa`)
+          data[`${val.name} homa`] = formatBalance(val.homa, val.token.decimals)
+        }
+        if (val.liquidity) {
+          keys.add(`${val.name} liquidity`)
+          data[`${val.name} liquidity`] = formatBalance(val.liquidity, val.token.decimals)
+        }
+
         // result.push({
         //   account: name,
         //   token: val.name,

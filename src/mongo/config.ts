@@ -112,4 +112,6 @@ export const systemAddresses = {
   homa: '23M5ttkmR6Kco5pqN691bGfU3BhfU6QPG9arw6SR1XpNuQqu',
   dex: '23M5ttkmR6KcnxentoqchgBdUjzMDSzFoUyf5qMs7FsmRMvV',
   incentives: '23M5ttkmR6Kco7bReRDve6bQUSAcwqebatp3fWGJYb4hDSDJ',
+  homaTreasury: '23M5ttkmR6Kco5p3LFGKMpMv4zvLkKdUQWW1wGGoV8zDX3am',
+  treasury: '23M5ttkmR6KcoTAAE6gcmibnKFtVaTP5yxnY8HF1BmrJ2A1i',
 }
