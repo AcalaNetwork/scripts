@@ -116,27 +116,6 @@ runner()
               token,
               free,
             })
-
-            // if (token.isDexShare) {
-            //   const token1 = await wallet.getToken(currencyId.asDexShare[0])
-            //   const token2 = await wallet.getToken(currencyId.asDexShare[1])
-            //   const totalShare = await apiAt.query.tokens.totalIssuance(currencyId)
-            //   const poolAmount = await apiAt.query.dex.liquidityPool(token.toTradingPair(api))
-            //   const token1Amount = (poolAmount[0].toBigInt() * free) / totalShare.toBigInt()
-            //   const token2Amount = (poolAmount[1].toBigInt() * free) / totalShare.toBigInt()
-
-            //   data.push({
-            //     name: token.display + ' ' + token1.display,
-            //     token: token1,
-            //     free: token1Amount,
-            //   })
-
-            //   data.push({
-            //     name: token.display + ' ' + token2.display,
-            //     token: token2,
-            //     free: token2Amount,
-            //   })
-            // }
           }
           for (const { currency, rate } of collaterals) {
             const collateralToken = await wallet.getToken(currency)
@@ -168,25 +147,6 @@ runner()
                 token,
                 free: share,
               })
-
-              // const token1 = await wallet.getToken(poolCurrencyId.asDexShare[0])
-              // const token2 = await wallet.getToken(poolCurrencyId.asDexShare[1])
-              // const totalShare = await apiAt.query.tokens.totalIssuance(poolCurrencyId)
-              // const poolAmount = await apiAt.query.dex.liquidityPool(token.toTradingPair(api))
-              // const token1Amount = (poolAmount[0].toBigInt() * share) / totalShare.toBigInt()
-              // const token2Amount = (poolAmount[1].toBigInt() * share) / totalShare.toBigInt()
-
-              // data.push({
-              //   name: 'Reward' + token.display + ' ' + token1.display,
-              //   token: token1,
-              //   free: token1Amount,
-              // })
-
-              // data.push({
-              //   name: 'Reward' + token.display + ' ' + token2.display,
-              //   token: token2,
-              //   free: token2Amount,
-              // })
             }
           }
 
@@ -201,25 +161,6 @@ runner()
               token,
               free: shareAmount,
             })
-
-            // const pool = poolData[pair.toString()]
-
-            // const token1 = await wallet.getToken(pair[0])
-            // const token2 = await wallet.getToken(pair[1])
-            // const token1Amount = (shareAmount * 10n ** 18n) / 2n / pool.initalRate[0]
-            // const token2Amount = (shareAmount * 10n ** 18n) / 2n / pool.initalRate[1]
-
-            // data.push({
-            //   name: token.display + ' ' + token1.display,
-            //   token: token1,
-            //   free: token1Amount,
-            // })
-
-            // data.push({
-            //   name: token.display + ' ' + token2.display,
-            //   token: token2,
-            //   free: token2Amount,
-            // })
           }
 
           const redeemRequest = await apiAt.query.homa.redeemRequests(address)
@@ -285,7 +226,7 @@ runner()
           xcmOut?: any
           before?: any
           after?: any
-          homa?: any
+          system?: any
           liquidity?: any
         }
       }
@@ -311,7 +252,7 @@ runner()
       const agg = [
         {
           $match: {
-            category: 'xcm-transfer',
+            category: 'xcm-in',
             account: name,
             amount: { $gt: 0 },
           },
@@ -341,7 +282,7 @@ runner()
       const agg2 = [
         {
           $match: {
-            category: 'xcm-transfer',
+            category: 'xcm-out',
             account: name,
             amount: { $lt: 0 },
           },
@@ -371,7 +312,7 @@ runner()
       const agg3 = [
         {
           $match: {
-            category: 'homa',
+            category: 'system',
             account: name,
           },
         },
@@ -393,8 +334,8 @@ runner()
           free[name] = { name, token }
         }
 
-        console.assert(free[name].homa === undefined, free[name].homa, name, data)
-        free[name].homa = BigInt(data.sum.toString())
+        console.assert(free[name].system === undefined, free[name].system, name, data)
+        free[name].system = BigInt(data.sum.toString())
       }
 
       const agg4 = [
@@ -446,23 +387,14 @@ runner()
           keys.add(`${val.name} xcmOut`)
           data[`${val.name} xcmOut`] = formatBalance(val.xcmOut, val.token.decimals)
         }
-        if (val.homa) {
-          keys.add(`${val.name} homa`)
-          data[`${val.name} homa`] = formatBalance(val.homa, val.token.decimals)
+        if (val.system) {
+          keys.add(`${val.name} system`)
+          data[`${val.name} system`] = formatBalance(val.system, val.token.decimals)
         }
         if (val.liquidity) {
           keys.add(`${val.name} liquidity`)
           data[`${val.name} liquidity`] = formatBalance(val.liquidity, val.token.decimals)
         }
-
-        // result.push({
-        //   account: name,
-        //   token: val.name,
-        //   before: formatBalance(val.before, val.token.decimals),
-        //   after: formatBalance(val.after, val.token.decimals),
-        //   xcmIn: formatBalance(val.xcmIn, val.token.decimals),
-        //   xcmOut: formatBalance(val.xcmOut, val.token.decimals),
-        // })
       }
       result.push(data)
     }

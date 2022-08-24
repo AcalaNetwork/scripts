@@ -142,6 +142,87 @@ const createTrace = async (evt: Event) => {
   )
 }
 
+const getCategory = (evt: Event) => {
+  if (evt.extrinsicHash == null) {
+    return 'system'
+  }
+
+  switch (evt.call) {
+    case 'Honzon.adjust_loan':
+    case 'Honzon.adjust_loan_by_debit_value':
+      return 'loan'
+
+    case 'Incentives.deposit_dex_share':
+    case 'Incentives.withdraw_dex_share':
+      return 'lp-staking'
+
+    case 'Balances.transfer_all':
+    case 'Balances.transfer_keep_alive':
+    case 'Balances.transfer':
+    case 'Currencies.transfer_native_currency':
+    case 'Currencies.transfer':
+      return 'transfer'
+
+    case 'XTokens.transfer':
+      return 'xcm-out'
+
+    case 'ParachainSystem.set_validation_data':
+      return 'xcm-in'
+
+    case 'Dex.add_liquidity':
+    case 'Dex.remove_liquidity':
+    case 'StableAsset.mint':
+    case 'StableAsset.redeem_proportion':
+    case 'StableAsset.redeem_single':
+      return 'swap-liquidity'
+
+    case 'AggregatedDex.swap_with_exact_supply':
+    case 'Dex.claim_dex_share':
+    case 'Dex.swap_with_exact_supply':
+    case 'Dex.swap_with_exact_target':
+    case 'Honzon.close_loan_has_debit_by_dex':
+    case 'StableAsset.swap':
+      return 'swap'
+
+    case 'EVM.eth_call':
+    case 'EVM.call':
+      return 'evm'
+
+    case 'Incentives.claim_rewards':
+      return 'claim'
+
+    case 'Homa.claim_redemption':
+    case 'Homa.fast_match_redeems_completely':
+    case 'Homa.mint':
+    case 'Homa.request_redeem':
+    case 'Homa.fast_match_redeems':
+      return 'homa'
+
+    case 'Proxy.proxy':
+    case 'Proxy.announce':
+    case 'Utility.batch':
+    case 'TransactionPayment.with_fee_path':
+    case 'TransactionPayment.with_fee_currency':
+    case 'Multisig.as_multi':
+    case 'Multisig.approve_as_multi':
+      return 'nested'
+
+    case 'CdpEngine.liquidate':
+    case 'Dex.end_provisioning':
+    case 'EvmAccounts.claim_account':
+    case 'Multisig.cancel_as_multi':
+    case 'NFT.transfer':
+      return 'ignored'
+
+    case null:
+    case undefined:
+      return 'fee'
+    default:
+      console.log(`Unknown call ${evt.call}`)
+      return 'unknown'
+  }
+}
+
 const createAccountTrace = async (evt: Event, trace: Trace) => {
   if (
     (evt.event === 'Balances.Withdraw' || evt.event === 'Balances.Deposit') &&
@@ -151,88 +232,7 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
     return
   }
 
-  let category = 'unknown'
-  switch (evt.call) {
-    case 'Honzon.adjust_loan':
-    case 'Honzon.adjust_loan_by_debit_value':
-      category = 'loan'
-      break
-    case 'Incentives.deposit_dex_share':
-    case 'Incentives.withdraw_dex_share':
-      category = 'lp-staking'
-      break
-    case 'Balances.transfer_all':
-    case 'Balances.transfer_keep_alive':
-    case 'Balances.transfer':
-    case 'Currencies.transfer_native_currency':
-    case 'Currencies.transfer':
-      category = 'transfer'
-      break
-    case 'XTokens.transfer':
-      category = 'xcm-out'
-      break
-    case 'ParachainSystem.set_validation_data':
-      category = 'xcm-in'
-      break
-    case 'Dex.add_liquidity':
-    case 'Dex.remove_liquidity':
-    case 'StableAsset.mint':
-    case 'StableAsset.redeem_proportion':
-    case 'StableAsset.redeem_single':
-      category = 'swap-liquidity'
-      break
-    case 'AggregatedDex.swap_with_exact_supply':
-    case 'Dex.claim_dex_share':
-    case 'Dex.swap_with_exact_supply':
-    case 'Dex.swap_with_exact_target':
-    case 'Honzon.close_loan_has_debit_by_dex':
-    case 'StableAsset.swap':
-      category = 'swap'
-      break
-    case 'EVM.eth_call':
-    case 'EVM.call':
-      category = 'evm'
-      break
-    case 'Incentives.claim_rewards':
-      category = 'claim'
-      break
-    case 'Homa.claim_redemption':
-    case 'Homa.fast_match_redeems_completely':
-    case 'Homa.mint':
-    case 'Homa.request_redeem':
-    case 'Homa.fast_match_redeems':
-      category = 'homa'
-      break
-    case 'Proxy.proxy':
-    case 'Proxy.announce':
-    case 'Utility.batch':
-    case 'TransactionPayment.with_fee_path':
-    case 'TransactionPayment.with_fee_currency':
-    case 'Multisig.as_multi':
-    case 'Multisig.approve_as_multi':
-      category = 'nested'
-      break
-    case 'CdpEngine.liquidate':
-    case 'Dex.end_provisioning':
-    case 'EvmAccounts.claim_account':
-    case 'Multisig.cancel_as_multi':
-    case 'NFT.transfer':
-      category = 'ignored'
-      // ignore
-      return
-    case null:
-    case undefined:
-      if (trace.from === config.systemAddresses.homaTreasury) {
-        category = 'homa-burn'
-      } else if (trace.to === config.systemAddresses.homaTreasury) {
-        category = 'homa-mint'
-      } else {
-        category = 'ignored'
-      }
-      break
-    default:
-      console.log(`Unknown call ${evt.call}`)
-  }
+  const category = getCategory(evt)
 
   if (trace.from) {
     const account = trace.from
