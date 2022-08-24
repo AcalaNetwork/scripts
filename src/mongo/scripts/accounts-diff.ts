@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import '@acala-network/types'
 import * as config from '../config'
@@ -103,7 +104,7 @@ runner()
             })
           )
 
-          const nativeToken = await wallet.getToken(api.consts.currencies.getNativeCurrencyId)
+          const nativeToken = await wallet.getToken(apiAt.consts.currencies.getNativeCurrencyId)
           const data = [{ name: nativeToken.display, token: nativeToken, free: native.toBigInt() }]
           for (const [key, value] of tokens) {
             const currencyId = key.args[1] as AcalaPrimitivesCurrencyCurrencyId
@@ -221,6 +222,23 @@ runner()
             // })
           }
 
+          const redeemRequest = await apiAt.query.homa.redeemRequests(address)
+          let homaValue = redeemRequest.unwrapOrDefault()[0].toBigInt()
+
+          const unbondings = await apiAt.query.homa.unbondings.entries(address)
+          for (const chunk of unbondings) {
+            homaValue += chunk[1].toBigInt()
+          }
+
+          if (homaValue > 0n) {
+            const token = await wallet.getToken(apiAt.consts.homa.liquidCurrencyId)
+            data.push({
+              name: 'Redeem ' + token.display,
+              token,
+              free: homaValue,
+            })
+          }
+
           return {
             name: address,
             data: data.filter((x) => x.free !== 0n),
@@ -230,23 +248,22 @@ runner()
     }
 
     const beforeBlock = 1638215
-    const afterBlock = 1696000
+    const afterBlock = 1694500
 
-    const addresses = []
+    // const addresses = []
+    // for await (const acc of AccountBalance.find({})) {
+    //   addresses.push(acc._id)
+    // }
 
-    for await (const acc of AccountBalance.find({})) {
-      addresses.push(acc._id)
-    }
-
-    // const addresses = (
-    //   await AccountTrace.aggregate([
-    //     {
-    //       $group: {
-    //         _id: '$account',
-    //       },
-    //     },
-    //   ])
-    // ).map((i) => i._id) as string[]
+    const addresses = (
+      await AccountTrace.aggregate([
+        {
+          $group: {
+            _id: '$account',
+          },
+        },
+      ])
+    ).map((i) => i._id) as string[]
 
     const [dataBefore, dataAfter] = await Promise.all([
       queryData(beforeBlock, addresses),

@@ -169,8 +169,10 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
       category = 'transfer'
       break
     case 'XTokens.transfer':
+      category = 'xcm-out'
+      break
     case 'ParachainSystem.set_validation_data':
-      category = 'xcm-transfer'
+      category = 'xcm-in'
       break
     case 'Dex.add_liquidity':
     case 'Dex.remove_liquidity':
@@ -253,9 +255,6 @@ const createAccountTrace = async (evt: Event, trace: Trace) => {
     )
   }
   if (trace.to) {
-    if (category === 'xcm-transfer' && evt.call?.startsWith('XTokens')) {
-      category = 'xcm-receive'
-    }
     const account = trace.to
     await AccountTrace.updateOne(
       { _id: `${account}-${evt._id}` },
