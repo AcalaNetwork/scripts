@@ -192,3 +192,99 @@ export const accountBlockTraceSchema = new Schema<AccountBlockTrace>({
 })
 
 export const AccountBlockTrace = model('AccountBlockTrace', accountBlockTraceSchema)
+
+export interface IncentiveEvent {
+  _id: string
+  height: number
+  blockHash: string
+  extrinsicHahs?: string
+  call?: string
+  event: string
+  currencyId: string
+  amount: Decimal128
+  who: string
+}
+
+export const incentiveEvent = new Schema<IncentiveEvent>({
+  _id: String,
+  height: Number,
+  blockHash: String,
+  extrinsicHahs: String,
+  call: String,
+  event: String,
+  currencyId: String,
+  amount: Schema.Types.Decimal128,
+  who: String,
+})
+
+export const IncentivesEvent = model('IncentivesEvent', incentiveEvent)
+
+export interface HomaRedeemedByUnbondedEvent {
+  _id: string
+  height: number
+  blockHash: string
+  extrinsicHahs?: string
+  call?: string
+  event: string
+  liquidAmount: Decimal128
+  unbondingStakingAmount: Decimal128
+  who: string
+}
+
+export const homaRedeemByUnbondedEvent = new Schema<HomaRedeemedByUnbondedEvent>({
+  _id: String,
+  height: Number,
+  blockHash: String,
+  extrinsicHahs: String,
+  call: String,
+  event: String,
+  liquidAmount: Schema.Types.Decimal128,
+  unbondingStakingAmount: Schema.Types.Decimal128,
+  who: String,
+})
+
+export const HomaRedeemedByUnbondedsEvent = model('HomaRedeemedByUnbondedsEvent', homaRedeemByUnbondedEvent)
+
+export interface HomaWithdrawRedemptionEvent {
+  _id: string
+  height: number
+  blockHash: string
+  extrinsicHahs?: string
+  call?: string
+  event: string
+  amount: Decimal128
+  who: string
+}
+
+export const homaWithdrawRedemptionEvent = new Schema<HomaWithdrawRedemptionEvent>({
+  _id: String,
+  height: Number,
+  blockHash: String,
+  extrinsicHahs: String,
+  call: String,
+  event: String,
+  amount: Schema.Types.Decimal128,
+  who: String,
+})
+
+export const homaWithdrawRedemptionsEvent = model('HomaWithdrawRedemptionsEvent', homaWithdrawRedemptionEvent)
+
+export interface Block {
+  _id: string
+  hash: string
+  height: number
+  timestamp: Date
+  extrinsics: string
+  events: string
+}
+
+export const block = new Schema<Block>({
+  _id: String,
+  hash: String,
+  height: Number,
+  timestamp: Date,
+  extrinsics: String,
+  events: String,
+})
+
+export const blocks = model('Block', block)
