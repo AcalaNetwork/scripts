@@ -62,19 +62,6 @@ export const isExitAddr = (addr: string) => {
     '23UvQ3ZQXJ5LfTUSYkcRPkQX2FHgcKxGmqdxYJe9j5e3Lwsi',
     // astar
     '23UvQ3ZQvYBhhhL4C1Zsn7gfDWcWu3pWyG5boWyGufhyoPbc',
-    // cex
-    // '26JqMKx4HJJcmb1kXo24HYYobiK2jURGCq6zuEzFBK3hQ9Ti',
-    // '23DhqhsKDDpFnH2GreWy7Sk4dqUmGCCVPGk5Lpr84jxzBh5T',
-    // '221r454cYfBePBwyMLL5QhdijGQaXrLvqKDp5cCBtMTTXWWH',
-    // '22qUkUHTKmWsMJm9UA781DNRshnig1H2J251wEbciy7yM96m',
-    // '24i2G8sM8Nqki95y5AafBZoS1EjvVrKSekA93sooNJ8sDtjJ',
-    // '24Vv7VS9CpRcxThp972X7sWu3Ksjyndrz7ZLnmyj1PYgVchQ',
-    // '23YSRvT53DmJqNSA8Ad222aNzAG3iWutxCFD54RXAxwBMUnJ',
-    // '21B6SER8NUWRVZcNM8LjAkYoVvms1EN1sKCfxJgTtN7MWpWm',
-    // '21ho2JXgaGNPyxq17GAuGAQsuF5CicLXLC9ChM3jPuxxxWr4',
-    // '24DYKM9LKtAcoWYke5oegdapiyXy6Un8i1ohYSVqxDB1rF5s',
-    // crowdloan distribution
-    '253yWsbUYxYqDXX7Ug8WzDeWtTNgFEsrz5xhgHAFnggJj4Pm',
   ]
   return exitAddresses.includes(addr) || (addr.slice(0, 4) === '23M5' && addr !== addrDex)
 }
@@ -87,8 +74,8 @@ export const isCexAddr = (addr: string) => {
     '221r454cYfBePBwyMLL5QhdijGQaXrLvqKDp5cCBtMTTXWWH',
     '22qUkUHTKmWsMJm9UA781DNRshnig1H2J251wEbciy7yM96m',
     '24i2G8sM8Nqki95y5AafBZoS1EjvVrKSekA93sooNJ8sDtjJ',
-    // '24Vv7VS9CpRcxThp972X7sWu3Ksjyndrz7ZLnmyj1PYgVchQ',
-    '23YSRvT53DmJqNSA8Ad222aNzAG3iWutxCFD54RXAxwBMUnJ',
+    '24Vv7VS9CpRcxThp972X7sWu3Ksjyndrz7ZLnmyj1PYgVchQ',
+    // '23YSRvT53DmJqNSA8Ad222aNzAG3iWutxCFD54RXAxwBMUnJ',
     // '21B6SER8NUWRVZcNM8LjAkYoVvms1EN1sKCfxJgTtN7MWpWm',
     // '21ho2JXgaGNPyxq17GAuGAQsuF5CicLXLC9ChM3jPuxxxWr4',
     // '24DYKM9LKtAcoWYke5oegdapiyXy6Un8i1ohYSVqxDB1rF5s',
@@ -97,5 +84,5 @@ export const isCexAddr = (addr: string) => {
 }
 
 export const getTransfersFileName = (name: string) => {
-  return `event-withCex-${name}.csv`
+  return `event-6cex-${name}.csv`
 }

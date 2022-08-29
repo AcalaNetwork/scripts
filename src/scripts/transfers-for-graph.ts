@@ -171,7 +171,7 @@ async function parseAllEvents() {
     }
   )
 
-  console.log(`parsing finished`)
+  console.log(`parsing events finished`)
   ;[claims, balancesTransfers, tokensTransfers, cdpEvents, lpAdds].forEach((txs, i) => {
     createCSV(
       getTransfersFileName(i.toString()),
@@ -256,7 +256,7 @@ function extractAddress() {
     addAddr(item[1])
 
     if (addresses[item[1]] === 'Exchange') {
-      addresses[item[0]] = 'ExchangeUser'
+      addresses[item[0]] = 'ExchangeDepositAddr'
     }
   })
 
@@ -265,13 +265,14 @@ function extractAddress() {
 
   const data = Object.keys(addresses).map((addr) => [addr, addresses[addr]])
 
-  createCSV(`affected-addresses-withCex.csv`, ['address', 'tag'], data)
+  createCSV(`affected-addresses-6cex.csv`, ['address', 'tag'], data)
 }
 
 function main() {
   parseAllEvents()
     .then(() => {
       extractAddress()
+      console.log(`extract address finished`)
     })
     .catch(console.log)
 }
