@@ -157,8 +157,18 @@ async function parseAllEvents() {
     },
     (blocks) => {
       blocks.map((e) => {
-        e.events.map(({ name, args, indexInBlock }) => {
+        const extrinsicStatus: Record<string, boolean> = {}
+        e.extrinsics?.map(({ hash, success }) => {
+          extrinsicStatus[hash] = success
+        })
+        e.events.map(({ name, args, indexInBlock, extrinsic }) => {
           if (parsers[name]) {
+            // ignore the events from failed extrinsics
+            if (extrinsic && !extrinsicStatus[extrinsic.hash]) {
+              console.log(`ignore ${name} from failed tx ${extrinsic.hash}`)
+              return
+            }
+
             parsers[name]({ ...args, block: e.height, indexInBlock, hash: e.hash })
           }
         })
@@ -209,7 +219,7 @@ export function parseBlock(block: any): Block {
   return {
     hash: block.hash,
     height: block.height,
-    // extrinsics: JSON.parse(block.get('extrinsics')),
+    extrinsics: JSON.parse(block.extrinsics),
     events: JSON.parse(block.events),
   }
 }
@@ -265,7 +275,7 @@ function extractAddress() {
 
   const data = Object.keys(addresses).map((addr) => [addr, addresses[addr]])
 
-  createCSV(`affected-addresses-6cex.csv`, ['address', 'tag'], data)
+  createCSV(`affected-addresses-success-2.csv`, ['address', 'tag'], data)
 }
 
 function main() {
