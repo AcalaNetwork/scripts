@@ -6416,6 +6416,7 @@ __metadata:
     graphql-request: ^4.3.0
     husky: ^8.0.1
     lint-staged: ^13.0.3
+    lodash: ^4.17.21
     moment: ^2.29.4
     mongoose: ^6.5.2
     pinst: ^3.0.0

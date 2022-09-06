@@ -70,6 +70,7 @@ runner()
           totalCollateral: formatBalance(total.collateral, decimals),
           totalCollateralValue: formatBalance(collateralValue),
           capitalEfficiency: formatDecimal(debitValue.div(collateralValue)),
+          price: formatDecimal(price),
           other: {
             currency,
             token,

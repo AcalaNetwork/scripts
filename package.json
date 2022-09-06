@@ -45,6 +45,7 @@
     "bn.js": "^5.2.1",
     "dotenv": "^16.0.1",
     "graphql-request": "^4.3.0",
+    "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "mongoose": "^6.5.2",
     "rxjs": "^7.5.6",
